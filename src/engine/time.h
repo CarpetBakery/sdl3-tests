@@ -3,6 +3,9 @@
 
 // (Time namespace shamelessly stolen from Blah framework)
 // https://github.com/NoelFB/blah
+
+// UPDATE 2026-08-02 - I pulled this file from a C++ framework I wrote as a beginner in 2023, where I guess I stole it from blah
+// probably used somewhat incorrectly, and outdated.
 namespace Time
 {
 	// Ticks per second (microseconds in this case)

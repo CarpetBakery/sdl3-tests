@@ -3,7 +3,8 @@
 #include <SDL3/SDL_main.h>
 #include <iostream>
 
-#include "game.h"
+#include "engine/game.h"
+#include "sc_audio.h"
 
 namespace
 {
@@ -20,6 +21,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     {
         return SDL_APP_FAILURE;
     }
+    game.change_scene<SceneAudio>();
 
     return SDL_APP_CONTINUE;
 }
