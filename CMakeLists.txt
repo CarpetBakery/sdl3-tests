@@ -43,8 +43,13 @@ if (STATIC_LINK)
 endif()
 
 if (EMSCRIPTEN)
-  # NOTE: Not sure if this works...
   set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-s USE_SDL=3")
+  # set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s USE_SDL=3 -s USE_WEBGL2=1 -o index.html --shell-file ${CMAKE_SOURCE_DIR}/web/shell_minimal.html")
+
+  # Without minimal template
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s USE_SDL=3 -s USE_WEBGL2=1 -o index.html")
+
+	set(CMAKE_EXECUTABLE_SUFFIX ".html")
 else()
   include(FetchContent)
   set(FETCHCONTENT_QUIET FALSE)
