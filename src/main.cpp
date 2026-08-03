@@ -1,7 +1,7 @@
 #define SDL_MAIN_USE_CALLBACKS 1 // Use callbacks instead of the old overriding main method
 
 #include "test_game.h"
-#include "sc_audio.h"
+#include "scenes.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>

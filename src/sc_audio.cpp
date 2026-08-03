@@ -1,4 +1,4 @@
-#include "sc_audio.h"
+#include "scenes.h"
 
 #include "engine/game.h"
 #include "engine/time.h"
