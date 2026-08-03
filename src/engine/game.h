@@ -1,15 +1,17 @@
 #pragma once
-#include <SDL3/SDL.h>
-
 #include "world.h"
 #include "input.h"
+
+#include <SDL3/SDL.h>
+#include <memory>
+
 
 class Game
 {
 private:
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
-    Scene *scene = nullptr;
+    std::unique_ptr<Scene> scene = nullptr;
 
     int backbuffer_width = 0;
     int backbuffer_height = 0;
@@ -38,19 +40,18 @@ public:
 
     // Change to new scene
     template <class T>
-    T *change_scene(T *new_scene = new T())
+    T *change_scene()
     {
         if (scene != nullptr)
         {
             scene->destroy();
-            delete scene;
         }
 
-        scene = new_scene;
+        scene = std::make_unique<T>();
         scene->game = this; 
         scene->ready();
 
-        return new_scene;
+        return (T*)scene.get();
     }
 
     inline SDL_Window *get_window() { return window; }
@@ -72,8 +73,8 @@ public:
         return h;
     }
 
-    inline Scene *get_scene() { return scene; }
-    inline const Scene *get_scene() const { return scene; }
+    inline Scene *get_scene() { return scene.get(); }
+    inline const Scene *get_scene() const { return scene.get(); }
 
     // TEMP solution
     inline const int get_backbuffer_width() const { return backbuffer_width; }

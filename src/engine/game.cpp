@@ -129,8 +129,7 @@ void Game::ready(void *appstate)
 {}
 
 void Game::update(void *appstate)
-{
-}
+{}
 
 void Game::draw(void *appstate)
 {}

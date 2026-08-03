@@ -128,7 +128,8 @@ namespace Math
         return static_cast<T>(a < b ? a : b);
     }
 
-    constexpr float clamp(float a, float min, float max)
+    template<class T>
+    constexpr float t_clamp(T a, T min, T max)
     {
         if (a < min)
         {
@@ -139,6 +140,15 @@ namespace Math
             return max;
         }
         return a;
+    }
+
+    constexpr float clampf(float a, float min, float max)
+    {
+        return t_clamp<float>(a, min, max);
+    }
+    constexpr int clampi(int a, int min, int max)
+    {
+        return t_clamp<int>(a, min, max);
     }
 
     constexpr float approach(float from, float target, float amt)

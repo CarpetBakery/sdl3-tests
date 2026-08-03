@@ -1,7 +1,5 @@
 #include "input.h"
-
 #include "debug.h"
-
 
 void Input::init()
 {

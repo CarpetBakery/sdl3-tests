@@ -1,18 +1,20 @@
 #define SDL_MAIN_USE_CALLBACKS 1 // Use callbacks instead of the old overriding main method
+
+#include "test_game.h"
+#include "sc_audio.h"
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <iostream>
-
-#include "engine/game.h"
-#include "sc_audio.h"
 
 namespace
 {
     constexpr int WINDOW_WIDTH = 640;
     constexpr int WINDOW_HEIGHT = 480;
     
-    Game game;
+    TestGame game;
 }
+
 
 // Startup function
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
