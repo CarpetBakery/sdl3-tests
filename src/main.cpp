@@ -19,11 +19,17 @@ namespace
 // Startup function
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
-    if (!game.init(*appstate, WINDOW_WIDTH, WINDOW_HEIGHT))
+    GameConfig config;
+    config.window_width = WINDOW_WIDTH;
+    config.window_height = WINDOW_HEIGHT;
+    config.sdl_gpu = true;
+    config.sdl_renderer = false;
+    
+    if (!game.init(*appstate, config))
     {
         return SDL_APP_FAILURE;
     }
-    game.change_scene<SceneAudio>();
+    game.change_scene<SceneGpu>();
 
     return SDL_APP_CONTINUE;
 }

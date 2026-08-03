@@ -5,16 +5,33 @@
 #include <SDL3/SDL.h>
 #include <memory>
 
+struct GameConfig
+{
+    int window_width = 640;
+    int window_height = 480;
+    char *window_title = nullptr;
+
+    bool sdl_renderer = true;
+    
+    // Enable SDL GPU
+    bool sdl_gpu = false;
+};
 
 class Game
 {
 private:
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
+    SDL_GPUDevice *device = nullptr;
+
+    // The current scene
     std::unique_ptr<Scene> scene = nullptr;
 
     int backbuffer_width = 0;
     int backbuffer_height = 0;
+
+    bool init_sdl();
+    bool init_gpu();
 
 protected:
     virtual void ready(void *appstate);
@@ -24,6 +41,7 @@ protected:
     
 public:
     Input input;
+    GameConfig config;
 
     Game() = default;
     virtual ~Game() = default;
@@ -33,7 +51,7 @@ public:
     Game &operator=(const Game&) = delete;
     Game &operator=(Game&&) = delete;
     
-    bool init(void *appstate, int width, int height);
+    bool init(void *appstate, const GameConfig &info);
     void tick(void *appstate);
     void event(void *appstate, SDL_Event *event);
     void destroy(void *appstate, SDL_AppResult result);

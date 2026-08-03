@@ -10,7 +10,7 @@ public:
     void destroy() override;
 };
 
-class SceneGl : public Scene
+class SceneGpu : public Scene
 {
 public:
     void ready() override;

@@ -14,25 +14,22 @@ namespace
     int max_updates = 5; // Maximum updates to run before "giving up" and reducing frame rate
 }
 
-bool Game::init(void *appstate, int width, int height)
+bool Game::init(void *appstate, const GameConfig &info)
 {
-    SDL_SetAppMetadata("First SDL3 Test", "1.0", "com.example.sdl3test");
+    config = info;
 
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
+    backbuffer_width = config.window_width;
+    backbuffer_height = config.window_height;
+
+    if (!init_sdl())
     {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return false;
     }
 
-    if (!SDL_CreateWindowAndRenderer("super mario 5", width, height, SDL_WINDOW_RESIZABLE, &window, &renderer))
+    if (config.sdl_gpu && !init_gpu())
     {
-        SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
         return false;
     }
-    SDL_SetRenderLogicalPresentation(renderer, width, height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-
-    backbuffer_width = width;
-    backbuffer_height = height;
 
     // Init frame limiter
     game_time_last = Time::getTicks();
@@ -50,6 +47,60 @@ void Game::quit(void *appstate, SDL_AppResult result)
     {
         scene->destroy();
     }
+}
+
+bool Game::init_sdl()
+{
+    SDL_SetAppMetadata("First SDL3 Test", "1.0", "com.example.sdl3test");
+
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
+    {
+        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
+        return false;
+    }
+
+    window = SDL_CreateWindow(config.window_title, config.window_width, config.window_height, SDL_WINDOW_RESIZABLE);
+    if (window == NULL)
+    {
+        SDL_Log("Couldn't create window: %s", SDL_GetError());
+        return false;
+    }
+
+    if (config.sdl_renderer)
+    {
+        renderer = SDL_CreateRenderer(window, NULL);
+        if (renderer == NULL)
+        {
+            SDL_Log("Couldn't create renderer: %s", SDL_GetError());
+            return false;
+        }
+        SDL_SetRenderLogicalPresentation(renderer, config.window_width, config.window_height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    }
+    
+    return true;
+}
+
+bool Game::init_gpu()
+{
+    SDL_GPUShaderFormat shader_formats = SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL;
+    device = SDL_CreateGPUDevice(shader_formats, false, NULL);
+    if (device == NULL)
+    {
+        SDL_Log("Couldn't create GPU device: %s", SDL_GetError());
+        return false;
+    }
+
+    // Print info
+    SDL_Log("Using %s GPU implementation.", SDL_GetGPUDeviceDriver(device));
+
+    // Bind to window
+    if (!SDL_ClaimWindowForGPUDevice(device, window))
+    {
+        SDL_Log("Failed to bind GPU device to window: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
 }
 
 void Game::tick(void *appstate)
@@ -89,7 +140,7 @@ void Game::tick(void *appstate)
 
         Time::delta = (1.0f / draw_fps);
         Time::deltaTime = ((Time::delta * Time::ticksPerSecond) / (float)timeTarget / (draw_fps / game_fps));
-        
+
         if (Time::pauseTimer > 0)
         {
             Time::pauseTimer -= Time::delta;
@@ -126,13 +177,16 @@ void Game::tick(void *appstate)
 }
 
 void Game::ready(void *appstate)
-{}
+{
+}
 
 void Game::update(void *appstate)
-{}
+{
+}
 
 void Game::draw(void *appstate)
-{}
+{
+}
 
 void Game::event(void *appstate, SDL_Event *event)
 {
@@ -148,5 +202,4 @@ void Game::event(void *appstate, SDL_Event *event)
 
 void Game::destroy(void *appstate, SDL_AppResult result)
 {
-    
 }
