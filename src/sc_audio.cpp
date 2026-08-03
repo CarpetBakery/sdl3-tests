@@ -26,6 +26,27 @@ namespace
     const float twelve_root_2 = Math::pow(2.0f, 1.0f / 12.0f);
 
     bool audio_playing = false;
+
+    constexpr int key_count = 17;
+    SDL_Keycode keys[key_count] = {
+        SDLK_Z,
+        SDLK_S,
+        SDLK_X,
+        SDLK_D,
+        SDLK_C,
+        SDLK_V,
+        SDLK_G,
+        SDLK_B,
+        SDLK_H,
+        SDLK_N,
+        SDLK_J,
+        SDLK_M,
+        SDLK_COMMA,
+        SDLK_L,
+        SDLK_PERIOD,
+        SDLK_SEMICOLON,
+        SDLK_SLASH,
+    };
 }
 
 // Audio test
@@ -40,27 +61,46 @@ void SceneAudio::ready()
 
 void SceneAudio::update()
 {
-    if (game->input.key_pressed(SDLK_SPACE))
-    {
-        if (audio_playing)
-        {
-            SDL_PauseAudioStreamDevice(audio_stream);
-        }
-        else
-        {
-            SDL_ResumeAudioStreamDevice(audio_stream);
-        }
-        audio_playing = !audio_playing;
-    }
+    // if (game->input.key_pressed(SDLK_SPACE))
+    // {
+    //     if (audio_playing)
+    //     {
+    //         SDL_PauseAudioStreamDevice(audio_stream);
+    //     }
+    //     else
+    //     {
+    //         SDL_ResumeAudioStreamDevice(audio_stream);
+    //     }
+    //     audio_playing = !audio_playing;
+    // }
     
-    if (game->input.key_pressed(SDLK_UP))
+    // if (game->input.key_pressed(SDLK_UP))
+    // {
+    //     pitch.store(pitch.load() + 1.0f);
+    // }
+
+    // if (game->input.key_pressed(SDLK_DOWN))
+    // {
+    //     pitch.store(pitch.load() - 1.0f);
+    // }
+
+    audio_playing = false;
+    for (int i = 0; i < key_count; i++)
     {
-        pitch.store(pitch.load() + 1.0f);
+        if (game->input.key(keys[i]))
+        {
+            pitch.store(i);
+            audio_playing = true;
+        }
     }
 
-    if (game->input.key_pressed(SDLK_DOWN))
+    if (!audio_playing)
     {
-        pitch.store(pitch.load() - 1.0f);
+        SDL_PauseAudioStreamDevice(audio_stream);
+    }
+    else
+    {
+        SDL_ResumeAudioStreamDevice(audio_stream);
     }
 }
 
@@ -76,7 +116,7 @@ void SceneAudio::draw()
     SDL_RenderDebugText(renderer, 272, 100, "Hello SDL3!");
     SDL_RenderDebugText(renderer, 224, 150, "Debug text and audio stream stuff");
 
-    SDL_RenderDebugText(renderer, 124, 200, "Press 'SPACE' to play a sine wave. Up/Down to change pitch");
+    SDL_RenderDebugText(renderer, 124, 200, "Use the bottom row of keys on the keyboard like a piano!");
     SDL_RenderDebugTextFormat(renderer, 224, 225, "Pitch: %" SDL_PRIs32, (int)pitch);
     
     if (audio_playing)
