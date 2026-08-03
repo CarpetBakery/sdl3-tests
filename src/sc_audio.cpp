@@ -35,12 +35,33 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
 
 void SceneAudio::ready()
 {
-
+    init_audio();
 }
 
 void SceneAudio::update()
 {
+    if (game->input.key_pressed(SDLK_SPACE))
+    {
+        if (audio_playing)
+        {
+            SDL_PauseAudioStreamDevice(audio_stream);
+        }
+        else
+        {
+            SDL_ResumeAudioStreamDevice(audio_stream);
+        }
+        audio_playing = !audio_playing;
+    }
+    
+    if (game->input.key_pressed(SDLK_UP))
+    {
+        pitch.store(pitch.load() + 1.0f);
+    }
 
+    if (game->input.key_pressed(SDLK_DOWN))
+    {
+        pitch.store(pitch.load() - 1.0f);
+    }
 }
 
 void SceneAudio::draw()
@@ -64,7 +85,7 @@ void SceneAudio::draw()
     }
 
     // For printf style substitutions
-    SDL_RenderDebugTextFormat(renderer, ((float) (game->window_width() - (charsize * 46)) / 2), 400, "(This program has been running for %" SDL_PRIu64 " seconds.)", SDL_GetTicks() / 1000);
+    SDL_RenderDebugTextFormat(renderer, ((float) (game->get_backbuffer_width() - (charsize * 46)) / 2), 400, "(This program has been running for %" SDL_PRIu64 " seconds.)", SDL_GetTicks() / 1000);
 }
 
 void SceneAudio::destroy()

@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 
 #include "world.h"
+#include "input.h"
 
 class Game
 {
@@ -10,6 +11,9 @@ private:
     SDL_Renderer *renderer = nullptr;
     Scene *scene = nullptr;
 
+    int backbuffer_width = 0;
+    int backbuffer_height = 0;
+
 protected:
     virtual void ready(void *appstate);
     virtual void update(void *appstate);
@@ -17,6 +21,8 @@ protected:
     virtual void quit(void *appstate, SDL_AppResult result);
     
 public:
+    Input input;
+
     Game() = default;
     virtual ~Game() = default;
 
@@ -68,4 +74,8 @@ public:
 
     inline Scene *get_scene() { return scene; }
     inline const Scene *get_scene() const { return scene; }
+
+    // TEMP solution
+    inline const int get_backbuffer_width() const { return backbuffer_width; }
+    inline const int get_backbuffer_height() const { return backbuffer_height; }
 };

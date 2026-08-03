@@ -31,12 +31,25 @@ bool Game::init(void *appstate, int width, int height)
     }
     SDL_SetRenderLogicalPresentation(renderer, width, height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
+    backbuffer_width = width;
+    backbuffer_height = height;
+
     // Init frame limiter
     game_time_last = Time::getTicks();
     game_time_accumulator = 0;
 
+    input.init();
+
     ready(appstate);
     return true;
+}
+
+void Game::quit(void *appstate, SDL_AppResult result)
+{
+    if (scene)
+    {
+        scene->destroy();
+    }
 }
 
 void Game::tick(void *appstate)
@@ -95,6 +108,7 @@ void Game::tick(void *appstate)
         Time::previousSeconds = Time::seconds;
         Time::seconds += Time::delta;
 
+        input.update();
         update(appstate);
         if (scene)
         {
@@ -111,19 +125,12 @@ void Game::tick(void *appstate)
     SDL_RenderPresent(renderer);
 }
 
-void Game::quit(void *appstate, SDL_AppResult result)
-{
-    if (scene)
-    {
-        scene->destroy();
-    }
-}
-
 void Game::ready(void *appstate)
 {}
 
 void Game::update(void *appstate)
-{}
+{
+}
 
 void Game::draw(void *appstate)
 {}
@@ -132,32 +139,15 @@ void Game::event(void *appstate, SDL_Event *event)
 {
     if (event->type == SDL_EVENT_KEY_DOWN)
     {
-        switch (event->key.key)
-        {
-        // case SDLK_SPACE:
-        //     if (audio_playing)
-        //     {
-        //         SDL_PauseAudioStreamDevice(audio_stream);
-        //     }
-        //     else
-        //     {
-        //         SDL_ResumeAudioStreamDevice(audio_stream);
-        //     }
-        //     audio_playing = !audio_playing;
-        //     break;
-        
-        // case SDLK_UP:
-        //     pitch.store(pitch.load() + 1.0f);
-        //     break;
-
-        // case SDLK_DOWN:
-        //     pitch.store(pitch.load() - 1.0f);
-        //     break;
-        }
+        input.keyboard_state[event->key.scancode] = true;
+    }
+    else if (event->type == SDL_EVENT_KEY_UP)
+    {
+        input.keyboard_state[event->key.scancode] = false;
     }
 }
 
 void Game::destroy(void *appstate, SDL_AppResult result)
 {
-
+    
 }
