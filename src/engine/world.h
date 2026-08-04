@@ -1,4 +1,6 @@
 #pragma once
+#include "graphics.h"
+
 #include <vector>
 
 class Scene;
@@ -14,15 +16,18 @@ class Scene
 private:
 
 protected:
-    Game *game = nullptr;    
+    Game *game = nullptr;
     
 public:
+    RendererType renderer_type = RendererType::Sdl;
+
     Scene(const Scene&) = delete;
     Scene(Scene&&) = delete;
     Scene &operator=(const Scene&) = delete;
     Scene &operator=(Scene&&) = delete;
     
     Scene() = default;
+    Scene(RendererType _renderer_type) : renderer_type(_renderer_type) {}
     virtual ~Scene() = default;
 
     virtual void ready() {}

@@ -3,6 +3,12 @@
 
 #include <string>
 
+enum RendererType
+{
+    Sdl,
+    Gl,
+    Gpu
+};
 
 class Color
 {

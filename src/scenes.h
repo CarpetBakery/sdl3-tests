@@ -4,6 +4,8 @@
 class SceneAudio : public Scene
 {
 public:
+    SceneAudio() : Scene(RendererType::Sdl) {}
+
     void ready() override;
     void update() override;
     void draw() override;
@@ -13,6 +15,8 @@ public:
 class SceneGpu : public Scene
 {
 public:
+    SceneGpu() : Scene(RendererType::Gpu) {}
+
     void ready() override;
     void update() override;
     void draw() override;

@@ -26,7 +26,7 @@ bool Game::init(void *appstate, const GameConfig &info)
         return false;
     }
 
-    if (config.sdl_gpu && !init_gpu())
+    if (config.renderer_type == RendererType::Gpu && !init_gpu())
     {
         return false;
     }
@@ -48,7 +48,7 @@ void Game::quit(void *appstate, SDL_AppResult result)
         scene->destroy();
     }
 
-    if (config.sdl_gpu)
+    if (config.renderer_type == RendererType::Gpu)
     {
         if (device != NULL)
         {
@@ -82,7 +82,7 @@ bool Game::init_sdl()
         return false;
     }
 
-    if (config.sdl_renderer)
+    if (config.renderer_type == RendererType::Sdl)
     {
         renderer = SDL_CreateRenderer(window, NULL);
         if (renderer == NULL)

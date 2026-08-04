@@ -1,9 +1,11 @@
 #pragma once
 #include "world.h"
 #include "input.h"
+#include "debug.h"
 
 #include <SDL3/SDL.h>
 #include <memory>
+
 
 struct GameConfig
 {
@@ -11,10 +13,7 @@ struct GameConfig
     int window_height = 480;
     char *window_title = nullptr;
 
-    bool sdl_renderer = true;
-    
-    // Enable SDL GPU
-    bool sdl_gpu = false;
+    RendererType renderer_type = RendererType::Sdl;
 };
 
 class Game
@@ -66,6 +65,9 @@ public:
         }
 
         scene = std::make_unique<T>();
+
+        LB_ASSERT(scene->renderer_type == config.renderer_type, "Scene requires different renderer type than initialized.");
+
         scene->game = this; 
         scene->ready();
 
