@@ -47,6 +47,22 @@ void Game::quit(void *appstate, SDL_AppResult result)
     {
         scene->destroy();
     }
+
+    if (config.sdl_gpu)
+    {
+        if (device != NULL)
+        {
+            if (window != NULL)
+            {
+                SDL_ReleaseWindowFromGPUDevice(device, window);
+                SDL_DestroyWindow(window);
+            }
+
+            SDL_DestroyGPUDevice(device);
+        }
+    }
+
+    SDL_Quit();
 }
 
 bool Game::init_sdl()

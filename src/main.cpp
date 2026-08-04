@@ -20,6 +20,7 @@ namespace
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
     GameConfig config;
+    config.window_title = "super mario 5";
     config.window_width = WINDOW_WIDTH;
     config.window_height = WINDOW_HEIGHT;
     config.sdl_gpu = true;
@@ -57,6 +58,6 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 // Function runs at shutdown
 void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
-    // SDL will clean up window/renderer for us???
+    // SDL3 will clean up window/renderer for us???
     game.destroy(appstate, result);
 }

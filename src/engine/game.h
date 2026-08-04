@@ -74,8 +74,12 @@ public:
 
     inline SDL_Window *get_window() { return window; }
     inline const SDL_Window *get_window() const { return window; }
+    
     inline SDL_Renderer *get_renderer() { return renderer; }
     inline const SDL_Renderer *get_renderer() const { return renderer; }
+
+    inline SDL_GPUDevice *get_device() { return device; }
+    inline const SDL_GPUDevice *get_device() const { return device; }
 
     inline const int window_width() const
     {
