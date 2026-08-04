@@ -29,8 +29,20 @@ private:
     int backbuffer_width = 0;
     int backbuffer_height = 0;
 
+    bool renderer_initialize_first_time = true;
+
+    // Engine init
     bool init_sdl();
-    bool init_gpu();
+
+    // Renderer setup/free
+    bool init_renderer_sdl();
+    void free_renderer_sdl();
+
+    bool init_renderer_gpu();
+    void free_renderer_gpu();
+
+    bool init_renderer(RendererType type);
+    void free_renderer();
 
 protected:
     virtual void ready(void *appstate);
@@ -66,7 +78,12 @@ public:
 
         scene = std::make_unique<T>();
 
-        LB_ASSERT(scene->renderer_type == config.renderer_type, "Scene requires different renderer type than initialized.");
+        if (scene->renderer_type != config.renderer_type)
+        {
+            free_renderer();
+            init_renderer(scene->renderer_type);
+        }
+        // LB_ASSERT(scene->renderer_type == config.renderer_type, "Scene requires different renderer type than initialized.");
 
         scene->game = this; 
         scene->ready();

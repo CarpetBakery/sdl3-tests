@@ -20,7 +20,7 @@ namespace
     
     std::atomic<float> pitch = 1.0f;
 
-    float *audio_buffer = new float[AUDIO_BUFFER_SIZE_SAMPLES * AUDIO_CHANNELS];
+    float *audio_buffer = nullptr;
 
     constexpr float base_freq = 110.0f;
     const float twelve_root_2 = Math::pow(2.0f, 1.0f / 12.0f);
@@ -135,6 +135,8 @@ void SceneAudio::destroy()
 
 static void init_audio()
 {
+    audio_buffer = new float[AUDIO_BUFFER_SIZE_SAMPLES * AUDIO_CHANNELS];
+    
     SDL_AudioSpec spec;
     spec.freq = DEFAULT_SAMPLE_RATE;
     spec.format = SDL_AUDIO_F32LE;

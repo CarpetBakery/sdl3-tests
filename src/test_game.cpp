@@ -1,5 +1,6 @@
 #include "test_game.h"
 
+#include "scenes.h"
 #include "engine/math.h"
 
 namespace
@@ -21,13 +22,15 @@ void TestGame::update(void *appstate)
         // Prev scene
         scene_index--;
         scene_index = Math::clampi(scene_index, 0, scene_index_max);
+        change_scene<SceneAudio>();
     }
-
+    
     if (input.key_pressed(SDLK_2))
     {
         // Next scene
         scene_index++;
         scene_index = Math::clampi(scene_index, 0, scene_index_max);
+        change_scene<SceneGpu>();
     }
     
 }

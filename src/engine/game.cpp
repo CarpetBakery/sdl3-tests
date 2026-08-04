@@ -26,7 +26,7 @@ bool Game::init(void *appstate, const GameConfig &info)
         return false;
     }
 
-    if (config.renderer_type == RendererType::Gpu && !init_gpu())
+    if (!init_renderer(config.renderer_type))
     {
         return false;
     }
@@ -48,18 +48,11 @@ void Game::quit(void *appstate, SDL_AppResult result)
         scene->destroy();
     }
 
-    if (config.renderer_type == RendererType::Gpu)
+    free_renderer();
+    
+    if (window != NULL)
     {
-        if (device != NULL)
-        {
-            if (window != NULL)
-            {
-                SDL_ReleaseWindowFromGPUDevice(device, window);
-                SDL_DestroyWindow(window);
-            }
-
-            SDL_DestroyGPUDevice(device);
-        }
+        SDL_DestroyWindow(window);
     }
 
     SDL_Quit();
@@ -81,22 +74,33 @@ bool Game::init_sdl()
         SDL_Log("Couldn't create window: %s", SDL_GetError());
         return false;
     }
-
-    if (config.renderer_type == RendererType::Sdl)
-    {
-        renderer = SDL_CreateRenderer(window, NULL);
-        if (renderer == NULL)
-        {
-            SDL_Log("Couldn't create renderer: %s", SDL_GetError());
-            return false;
-        }
-        SDL_SetRenderLogicalPresentation(renderer, config.window_width, config.window_height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-    }
     
     return true;
 }
 
-bool Game::init_gpu()
+bool Game::init_renderer_sdl()
+{
+    renderer = SDL_CreateRenderer(window, NULL);
+    if (renderer == NULL)
+    {
+        SDL_Log("Couldn't create renderer: %s", SDL_GetError());
+        return false;
+    }
+    SDL_SetRenderLogicalPresentation(renderer, config.window_width, config.window_height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+
+    return true;
+}
+
+void Game::free_renderer_sdl()
+{
+    if (renderer)
+    {
+        SDL_DestroyRenderer(renderer);
+        renderer = nullptr;
+    }
+}
+
+bool Game::init_renderer_gpu()
 {
     SDL_GPUShaderFormat shader_formats = SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL;
     device = SDL_CreateGPUDevice(shader_formats, false, NULL);
@@ -117,6 +121,57 @@ bool Game::init_gpu()
     }
 
     return true;
+}
+
+void Game::free_renderer_gpu()
+{
+    if (device)
+    {
+        SDL_ReleaseWindowFromGPUDevice(device, window);
+        SDL_DestroyGPUDevice(device);
+        device = nullptr;
+    }
+}
+
+bool Game::init_renderer(RendererType type)
+{
+    if (type == config.renderer_type && !renderer_initialize_first_time)
+    {
+        return true;
+    }
+    renderer_initialize_first_time = false;
+    
+    switch (type)
+    {
+    case RendererType::Sdl:
+        if (!init_renderer_sdl())
+        {
+            return false;
+        }
+        break;
+    case RendererType::Gpu:
+        if (!init_renderer_gpu())
+        {
+            return false;
+        }
+        break;
+    }
+
+    config.renderer_type = type;
+    return true;
+}
+
+void Game::free_renderer()
+{
+    switch (config.renderer_type)
+    {
+    case RendererType::Sdl:
+        free_renderer_sdl();
+        break;
+    case RendererType::Gpu:
+        free_renderer_gpu();
+        break;
+    }
 }
 
 void Game::tick(void *appstate)
