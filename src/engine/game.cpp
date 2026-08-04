@@ -103,7 +103,8 @@ void Game::free_renderer_sdl()
 bool Game::init_renderer_gpu()
 {
     SDL_GPUShaderFormat shader_formats = SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL;
-    device = SDL_CreateGPUDevice(shader_formats, false, NULL);
+    device = SDL_CreateGPUDevice(shader_formats, true, NULL);
+    
     if (device == NULL)
     {
         SDL_Log("Couldn't create GPU device: %s", SDL_GetError());
