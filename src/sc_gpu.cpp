@@ -4,6 +4,7 @@
 #include "engine/graphics.h"
 
 #include <SDL3/SDL.h>
+#include <filesystem>
 
 
 namespace
@@ -29,6 +30,8 @@ namespace
 
     SDL_GPUShader *vertex_shader = nullptr;
     SDL_GPUShader *fragment_shader = nullptr;
+
+    SDL_GPUGraphicsPipeline *graphics_pipeline = nullptr;
 }
 
 void SceneGpu::ready()
@@ -83,9 +86,15 @@ void SceneGpu::ready()
 
     // -- Compile shaders --
     {
+        std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
+        std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
+
+        LB_ASSERT(std::filesystem::exists(vertex_path), "Vertex shader not found.");
+        LB_ASSERT(std::filesystem::exists(fragment_path), "Fragment shader not found.");
+        
         // Vertex shader
         size_t vertex_code_size;
-        void *vertex_code = SDL_LoadFile("shaders/vertex.spv", &vertex_code_size);
+        void *vertex_code = SDL_LoadFile(vertex_path.c_str(), &vertex_code_size);
 
         // Create the vertex shader
         SDL_GPUShaderCreateInfo vertex_info{};
@@ -108,7 +117,7 @@ void SceneGpu::ready()
 
         // Fragment shader
         size_t fragment_code_size;
-        void *fragment_code = SDL_LoadFile("shaders/fragment.spv", &fragment_code_size);
+        void *fragment_code = SDL_LoadFile(fragment_path.c_str(), &fragment_code_size);
 
         // Create the fragment shader
 
@@ -128,7 +137,7 @@ void SceneGpu::ready()
         SDL_free(fragment_code);
     }
 
-    // -- Setup pipeline
+    // -- Setup pipeline --
     SDL_GPUGraphicsPipelineCreateInfo pipeline_info{};
 
     // Bind shaders
@@ -165,7 +174,39 @@ void SceneGpu::ready()
 
     pipeline_info.vertex_input_state.num_vertex_attributes = 2;
     pipeline_info.vertex_input_state.vertex_attributes = vertex_attributes;
+
+    // Describe the color target
+    SDL_GPUColorTargetDescription color_target_descriptions[1];
+    color_target_descriptions[0] = {};
+    color_target_descriptions[0].format = SDL_GetGPUSwapchainTextureFormat(game->get_device(), game->get_window());
+
+    // Example blending setup
+    // color_target_descriptions[0].blend_state.enable_blend = true;
+    // color_target_descriptions[0].blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
+    // color_target_descriptions[0].blend_state.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
+    // color_target_descriptions[0].blend_state.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+    // color_target_descriptions[0].blend_state.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+    // color_target_descriptions[0].blend_state.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+    // color_target_descriptions[0].blend_state.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+
+    pipeline_info.target_info.num_color_targets = 1;
+    pipeline_info.target_info.color_target_descriptions = color_target_descriptions;
+
+    // Build pipeline, release shaders
+    graphics_pipeline = SDL_CreateGPUGraphicsPipeline(game->get_device(), &pipeline_info);
+    SDL_ReleaseGPUShader(game->get_device(), vertex_shader);
+    SDL_ReleaseGPUShader(game->get_device(), fragment_shader);
 }
+
+void SceneGpu::destroy()
+{
+    if (graphics_pipeline)
+    {
+        SDL_ReleaseGPUGraphicsPipeline(game->get_device(), graphics_pipeline);
+        graphics_pipeline = nullptr;
+    }
+}
+
 
 void SceneGpu::update()
 {}
@@ -213,10 +254,4 @@ void SceneGpu::draw()
 
     // Submit command buffer for drawing
     SDL_SubmitGPUCommandBuffer(cmd_buf);
-}
-
-void SceneGpu::destroy()
-{
-    SDL_ReleaseGPUShader(game->get_device(), vertex_shader);
-    SDL_ReleaseGPUShader(game->get_device(), fragment_shader);
 }

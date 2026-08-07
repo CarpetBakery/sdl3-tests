@@ -29,7 +29,11 @@ private:
     int backbuffer_width = 0;
     int backbuffer_height = 0;
 
+    // Used to initialize renderer when calling init_renderer for the first time
     bool renderer_initialize_first_time = true;
+
+    // Path to the data folder
+    std::string data_path = "";
 
     // Engine init
     bool init_sdl();
@@ -43,6 +47,8 @@ private:
 
     bool init_renderer(RendererType type);
     void free_renderer();
+
+    bool init_datapath();
 
 protected:
     virtual void ready(void *appstate);
@@ -120,4 +126,8 @@ public:
     // TEMP solution
     inline const int get_backbuffer_width() const { return backbuffer_width; }
     inline const int get_backbuffer_height() const { return backbuffer_height; }
+
+    inline std::string get_datapath() { return data_path; }
+    inline const std::string get_datapath() const { return data_path; }
+
 };

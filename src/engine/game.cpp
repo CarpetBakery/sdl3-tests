@@ -3,6 +3,8 @@
 
 #include <atomic>
 #include <iostream>
+#include <filesystem>
+
 
 namespace
 {
@@ -21,12 +23,9 @@ bool Game::init(void *appstate, const GameConfig &info)
     backbuffer_width = config.window_width;
     backbuffer_height = config.window_height;
 
-    if (!init_sdl())
-    {
-        return false;
-    }
-
-    if (!init_renderer(config.renderer_type))
+    if (!init_sdl() ||
+        !init_datapath() ||
+        !init_renderer(config.renderer_type))
     {
         return false;
     }
@@ -173,6 +172,35 @@ void Game::free_renderer()
         free_renderer_gpu();
         break;
     }
+}
+
+bool Game::init_datapath()
+{
+    namespace fs = std::filesystem;
+
+    // Make sure we are able to get the current working path
+	if (SDL_GetBasePath() == NULL)
+	{
+		// sdlErrBox("fatal: Could not find program base path.");
+        SDL_Log("Couldn't find program base path: %s", SDL_GetError());
+		return false;
+	}
+	// std::string base_path = SDL_GetBasePath();
+	fs::path base_path = SDL_GetBasePath();
+
+    // -- Get data path --
+	// Go up directories until we find it
+	// NOTE: If the file path becomes too long, this won't work
+    
+    fs::path up_path = base_path;
+    do
+    {
+        up_path = up_path.parent_path();
+        data_path = up_path.string() + "\\data";
+    } while (!fs::exists(data_path) && !fs::is_directory(data_path));
+    LB_ASSERT((fs::exists(data_path) && fs::is_directory(data_path)) && data_path.size() > 0, "Error: Unable to find data directory.");
+
+    return true;
 }
 
 void Game::tick(void *appstate)
