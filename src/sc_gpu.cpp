@@ -9,6 +9,7 @@
 
 namespace
 {
+    // Using my own types... slower, im sure
     // struct Vertex
     // {
     //     Vec3f position;
@@ -19,6 +20,11 @@ namespace
     {
         float x, y, z;
         float r, g, b, a;
+    };
+
+    struct UniformBuffer
+    {
+        float time;
     };
 
     static Vertex vertices[]
@@ -34,6 +40,8 @@ namespace
     SDL_GPUGraphicsPipeline *graphics_pipeline = nullptr;
     SDL_GPUBuffer *vertex_buffer = nullptr;
     SDL_GPUTransferBuffer *transfer_buffer = nullptr;
+
+    UniformBuffer time_uniform{};
 }
 
 void SceneGpu::ready()
@@ -108,7 +116,7 @@ void SceneGpu::ready()
         vertex_info.num_samplers = 0;
         vertex_info.num_storage_buffers = 0;
         vertex_info.num_storage_textures = 0;
-        vertex_info.num_uniform_buffers = 0;
+        vertex_info.num_uniform_buffers = 1;
         
         vertex_shader = SDL_CreateGPUShader(game->get_device(), &vertex_info);
         SDL_free(vertex_code);
@@ -129,7 +137,7 @@ void SceneGpu::ready()
         fragment_info.num_samplers = 0;
         fragment_info.num_storage_buffers = 0;
         fragment_info.num_storage_textures = 0;
-        fragment_info.num_uniform_buffers = 0;
+        fragment_info.num_uniform_buffers = 1;
 
         fragment_shader = SDL_CreateGPUShader(game->get_device(), &fragment_info);
         SDL_free(fragment_code);
@@ -266,6 +274,11 @@ void SceneGpu::draw()
         buffer_bindings[0].offset = 0;
         SDL_BindGPUVertexBuffers(render_pass, 0, buffer_bindings, 1); // Bind one buffer starting from slot 0
 
+        // Set uniforms
+        time_uniform.time = SDL_GetTicksNS() / 1e9f; // Time since startup in seconds
+        SDL_PushGPUVertexUniformData(cmd_buf, 0, &time_uniform, sizeof(UniformBuffer));
+        SDL_PushGPUFragmentUniformData(cmd_buf, 0, &time_uniform, sizeof(UniformBuffer));
+        
         // Issue a draw call
         SDL_DrawGPUPrimitives(render_pass, 3, 1, 0, 0);
 
