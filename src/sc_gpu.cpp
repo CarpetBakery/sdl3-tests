@@ -32,6 +32,8 @@ namespace
     SDL_GPUShader *fragment_shader = nullptr;
 
     SDL_GPUGraphicsPipeline *graphics_pipeline = nullptr;
+    SDL_GPUBuffer *vertex_buffer = nullptr;
+    SDL_GPUTransferBuffer *transfer_buffer = nullptr;
 }
 
 void SceneGpu::ready()
@@ -40,13 +42,13 @@ void SceneGpu::ready()
     SDL_GPUBufferCreateInfo buffer_info{};
     buffer_info.size = sizeof(vertices); // Is "sizeof" gonna work here???
     buffer_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-    SDL_GPUBuffer *vertex_buffer = SDL_CreateGPUBuffer(game->get_device(), &buffer_info);
+    vertex_buffer = SDL_CreateGPUBuffer(game->get_device(), &buffer_info);
 
     // Create transfer buffer
     SDL_GPUTransferBufferCreateInfo transfer_info{};
     transfer_info.size = sizeof(vertices);
     transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-    SDL_GPUTransferBuffer *transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &transfer_info);
+    transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &transfer_info);
 
     // Fill transfer buffer with data
     Vertex *data = (Vertex*)SDL_MapGPUTransferBuffer(game->get_device(), transfer_buffer, false);
@@ -79,10 +81,6 @@ void SceneGpu::ready()
         SDL_EndGPUCopyPass(copy_pass);
         SDL_SubmitGPUCommandBuffer(cmd_buf);
     }
-
-    // Release buffers now that we're done uploading triangle data
-    SDL_ReleaseGPUBuffer(game->get_device(), vertex_buffer);
-    SDL_ReleaseGPUTransferBuffer(game->get_device(), transfer_buffer);
 
     // -- Compile shaders --
     {
@@ -200,6 +198,18 @@ void SceneGpu::ready()
 
 void SceneGpu::destroy()
 {
+    if (vertex_buffer)
+    {
+        SDL_ReleaseGPUBuffer(game->get_device(), vertex_buffer);
+        vertex_buffer = nullptr;
+    }
+
+    if (transfer_buffer)
+    {
+        SDL_ReleaseGPUTransferBuffer(game->get_device(), transfer_buffer);
+        transfer_buffer = nullptr;
+    }
+    
     if (graphics_pipeline)
     {
         SDL_ReleaseGPUGraphicsPipeline(game->get_device(), graphics_pipeline);
@@ -247,7 +257,17 @@ void SceneGpu::draw()
         // Begin a render pass
         SDL_GPURenderPass *render_pass = SDL_BeginGPURenderPass(cmd_buf, &color_target_info, 1, NULL);
 
-        // Draw something
+        // Bind pipeline
+        SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipeline);
+
+        // Bind vertex buffer
+        SDL_GPUBufferBinding buffer_bindings[1];
+        buffer_bindings[0].buffer = vertex_buffer;
+        buffer_bindings[0].offset = 0;
+        SDL_BindGPUVertexBuffers(render_pass, 0, buffer_bindings, 1); // Bind one buffer starting from slot 0
+
+        // Issue a draw call
+        SDL_DrawGPUPrimitives(render_pass, 3, 1, 0, 0);
 
         SDL_EndGPURenderPass(render_pass);
     }
