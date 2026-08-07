@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <cstdlib>
 
 // Nice math implementation all in one place
 

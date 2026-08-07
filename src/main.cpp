@@ -31,6 +31,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     }
     
     game.change_scene<SceneGpu>();
+    // game.change_scene<SceneAudio>();
 
     return SDL_APP_CONTINUE;
 }
