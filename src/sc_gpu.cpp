@@ -6,7 +6,6 @@
 #include <SDL3/SDL.h>
 #include <filesystem>
 
-
 namespace
 {
     // Using my own types... slower, im sure
@@ -27,11 +26,10 @@ namespace
         float time;
     };
 
-    static Vertex vertices[]
-    {
-        {0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},     // top vertex
-        {-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f},   // bottom left vertex
-        {0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f}     // bottom right vertex
+    static Vertex vertices[] = {
+        {0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},   // top vertex
+        {-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}, // bottom left vertex
+        {0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f}   // bottom right vertex
     };
 
     SDL_GPUShader *vertex_shader = nullptr;
@@ -59,7 +57,7 @@ void SceneGpu::ready()
     transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &transfer_info);
 
     // Fill transfer buffer with data
-    Vertex *data = (Vertex*)SDL_MapGPUTransferBuffer(game->get_device(), transfer_buffer, false);
+    Vertex *data = (Vertex *)SDL_MapGPUTransferBuffer(game->get_device(), transfer_buffer, false);
 
     memcpy(data, vertices, sizeof(vertices));
 
@@ -76,7 +74,7 @@ void SceneGpu::ready()
         SDL_GPUTransferBufferLocation location{};
         location.transfer_buffer = transfer_buffer;
         location.offset = 0;
-        
+
         SDL_GPUBufferRegion region{};
         region.buffer = vertex_buffer;
         region.size = sizeof(vertices);
@@ -97,14 +95,14 @@ void SceneGpu::ready()
 
         LB_ASSERT(std::filesystem::exists(vertex_path), "Vertex shader not found.");
         LB_ASSERT(std::filesystem::exists(fragment_path), "Fragment shader not found.");
-        
+
         // Vertex shader
         size_t vertex_code_size;
         void *vertex_code = SDL_LoadFile(vertex_path.c_str(), &vertex_code_size);
 
         // Create the vertex shader
         SDL_GPUShaderCreateInfo vertex_info{};
-        vertex_info.code = (Uint8*)vertex_code; // Convert to array of bytes
+        vertex_info.code = (Uint8 *)vertex_code; // Convert to array of bytes
         vertex_info.code_size = vertex_code_size;
         vertex_info.entrypoint = "main";
         vertex_info.format = SDL_GPU_SHADERFORMAT_SPIRV; // For loading .spv shaders
@@ -117,7 +115,7 @@ void SceneGpu::ready()
         vertex_info.num_storage_buffers = 0;
         vertex_info.num_storage_textures = 0;
         vertex_info.num_uniform_buffers = 1;
-        
+
         vertex_shader = SDL_CreateGPUShader(game->get_device(), &vertex_info);
         SDL_free(vertex_code);
 
@@ -128,7 +126,7 @@ void SceneGpu::ready()
         // Create the fragment shader
 
         SDL_GPUShaderCreateInfo fragment_info{};
-        fragment_info.code = (Uint8*)fragment_code;
+        fragment_info.code = (Uint8 *)fragment_code;
         fragment_info.code_size = fragment_code_size;
         fragment_info.entrypoint = "main";
         fragment_info.format = SDL_GPU_SHADERFORMAT_SPIRV;
@@ -167,16 +165,16 @@ void SceneGpu::ready()
     SDL_GPUVertexAttribute vertex_attributes[2];
 
     // a_position
-    vertex_attributes[0].buffer_slot = 0; // Fetch data from the buffer at slot 0
-    vertex_attributes[0].location = 0; // Layout (location = 0) in shader 
+    vertex_attributes[0].buffer_slot = 0;                             // Fetch data from the buffer at slot 0
+    vertex_attributes[0].location = 0;                                // Layout (location = 0) in shader
     vertex_attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3; // vec3
-    vertex_attributes[0].offset = 0; // Start from the first byte from current buffer position
+    vertex_attributes[0].offset = 0;                                  // Start from the first byte from current buffer position
 
     // a_color
-    vertex_attributes[1].buffer_slot = 0; // Use buffer at slot 0
-    vertex_attributes[1].location = 1; // Layout (location = 1) in shader 
+    vertex_attributes[1].buffer_slot = 0;                             // Use buffer at slot 0
+    vertex_attributes[1].location = 1;                                // Layout (location = 1) in shader
     vertex_attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4; // vec4
-    vertex_attributes[1].offset = sizeof(float) * 3; // 4th float from current buffer position
+    vertex_attributes[1].offset = sizeof(float) * 3;                  // 4th float from current buffer position
 
     pipeline_info.vertex_input_state.num_vertex_attributes = 2;
     pipeline_info.vertex_input_state.vertex_attributes = vertex_attributes;
@@ -217,7 +215,7 @@ void SceneGpu::destroy()
         SDL_ReleaseGPUTransferBuffer(game->get_device(), transfer_buffer);
         transfer_buffer = nullptr;
     }
-    
+
     if (graphics_pipeline)
     {
         SDL_ReleaseGPUGraphicsPipeline(game->get_device(), graphics_pipeline);
@@ -225,9 +223,9 @@ void SceneGpu::destroy()
     }
 }
 
-
 void SceneGpu::update()
-{}
+{
+}
 
 void SceneGpu::draw()
 {
@@ -237,13 +235,13 @@ void SceneGpu::draw()
         SDL_Log("Couldn't get command buffer: %s", SDL_GetError());
         // return SDL_APP_FAILURE;
     }
-    
+
     SDL_GPUTexture *swapchain_texture;
 
-    // If not used correctly, this can lead to memory leaks on certain backends    
+    // If not used correctly, this can lead to memory leaks on certain backends
     // https://hamdy-elzanqali.medium.com/let-there-be-triangles-sdl-gpu-edition-bd82cf2ef615
     // SDL_AcquireGPUSwapchainTexture(cmd_buf, game->get_window(), &swapchain_texture, NULL, NULL);
-    
+
     // Waits for vsync?
     if (!SDL_WaitAndAcquireGPUSwapchainTexture(cmd_buf, game->get_window(), &swapchain_texture, NULL, NULL))
     {
@@ -260,7 +258,7 @@ void SceneGpu::draw()
         color_target_info.cycle = true;
         color_target_info.load_op = SDL_GPU_LOADOP_CLEAR;
         color_target_info.store_op = SDL_GPU_STOREOP_STORE;
-        color_target_info.clear_color =  {0.16f, 0.47f, 0.34f, 1.0f};
+        color_target_info.clear_color = {0.16f, 0.47f, 0.34f, 1.0f};
 
         // Begin a render pass
         SDL_GPURenderPass *render_pass = SDL_BeginGPURenderPass(cmd_buf, &color_target_info, 1, NULL);
@@ -278,7 +276,7 @@ void SceneGpu::draw()
         time_uniform.time = SDL_GetTicksNS() / 1e9f; // Time since startup in seconds
         SDL_PushGPUVertexUniformData(cmd_buf, 0, &time_uniform, sizeof(UniformBuffer));
         SDL_PushGPUFragmentUniformData(cmd_buf, 0, &time_uniform, sizeof(UniformBuffer));
-        
+
         // Issue a draw call
         SDL_DrawGPUPrimitives(render_pass, 3, 1, 0, 0);
 

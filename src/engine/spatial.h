@@ -19,6 +19,8 @@ class Rect;
 template <class T>
 class Line;
 
+class Mat4x4;
+
 // Typedefs
 using Vec2f = Vec2<float>;
 using Vec2i = Vec2<int>;
@@ -206,6 +208,40 @@ public:
     const Line operator+(const Vec2<T> &rhs) const;
     const Line operator-(const Vec2<T> &rhs) const;
 };
+
+class Mat4x4
+{
+public:
+    float m11, m12, m13, m14;
+    float m21, m22, m23, m24;
+    float m31, m32, m33, m34;
+    float m41, m42, m43, m44;
+
+    constexpr Mat4x4();
+    constexpr Mat4x4(float m11, float m12, float m13, float m14,
+                     float m21, float m22, float m23, float m24,
+                     float m31, float m32, float m33, float m34,
+                     float m41, float m42, float m43, float m44);
+
+    constexpr Mat4x4 multiply(const Mat4x4 &mat) const;
+
+    std::string to_string() const;
+
+    static constexpr Mat4x4 create_scale(float x, float y, float z);
+    static constexpr Mat4x4 create_translation(float x, float y, float z);
+    static Mat4x4 create_rotation_z(float radians);
+    static constexpr Mat4x4 create_lookat(const Vec3f &camera_position, const Vec3f &camera_target, const Vec3f &camera_up);
+    static constexpr Mat4x4 create_orthographic(float left, float right, float bottom, float top, float near_plane, float far_plane);
+    static Mat4x4 create_perspective(float fov, float aspect_ratio, float near_plane, float far_plane); // Can't be constexpr because Math::tan
+
+    static const Mat4x4 Identity;
+};
+
+inline const Mat4x4 Mat4x4::Identity = Mat4x4(
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1);
 
 // -- Vec2 implementation --
 template <class T>
@@ -544,9 +580,9 @@ template <class T>
 template <class K>
 constexpr Rect<T>::Rect(const Rect<K> &rect)
     : x(static_cast<T>(rect.x)),
-        y(static_cast<T>(rect.y)),
-        w(static_cast<T>(rect.w)),
-        h(static_cast<T>(rect.h))
+      y(static_cast<T>(rect.y)),
+      w(static_cast<T>(rect.w)),
+      h(static_cast<T>(rect.h))
 {
 }
 
@@ -792,18 +828,176 @@ const Line<T> Line<T>::operator-(const Vec2<T> &rhs) const
     return Line(a - rhs, b - rhs);
 }
 
+// -- Mat4x4 implementation --
+constexpr Mat4x4::Mat4x4()
+    : m11(0), m12(0), m13(0), m14(0),
+      m21(0), m22(0), m23(0), m24(0),
+      m31(0), m32(0), m33(0), m34(0),
+      m41(0), m42(0), m43(0), m44(0)
+{
+}
+
+constexpr Mat4x4::Mat4x4(float m11, float m12, float m13, float m14,
+                         float m21, float m22, float m23, float m24,
+                         float m31, float m32, float m33, float m34,
+                         float m41, float m42, float m43, float m44)
+    : m11(m11), m12(m12), m13(m13), m14(m14),
+      m21(m21), m22(m22), m23(m23), m24(m24),
+      m31(m31), m32(m32), m33(m33), m34(m34),
+      m41(m41), m42(m42), m43(m43), m44(m44)
+{
+}
+
+constexpr Mat4x4 Mat4x4::multiply(const Mat4x4 &mat) const
+{
+    Mat4x4 result;
+
+    result.m11 = ((m11 * mat.m11) +
+                  (m12 * mat.m21) +
+                  (m13 * mat.m31) +
+                  (m14 * mat.m41));
+    result.m12 = ((m11 * mat.m12) +
+                  (m12 * mat.m22) +
+                  (m13 * mat.m32) +
+                  (m14 * mat.m42));
+    result.m13 = ((m11 * mat.m13) +
+                  (m12 * mat.m23) +
+                  (m13 * mat.m33) +
+                  (m14 * mat.m43));
+    result.m14 = ((m11 * mat.m14) +
+                  (m12 * mat.m24) +
+                  (m13 * mat.m34) +
+                  (m14 * mat.m44));
+    result.m21 = ((m21 * mat.m11) +
+                  (m22 * mat.m21) +
+                  (m23 * mat.m31) +
+                  (m24 * mat.m41));
+    result.m22 = ((m21 * mat.m12) +
+                  (m22 * mat.m22) +
+                  (m23 * mat.m32) +
+                  (m24 * mat.m42));
+    result.m23 = ((m21 * mat.m13) +
+                  (m22 * mat.m23) +
+                  (m23 * mat.m33) +
+                  (m24 * mat.m43));
+    result.m24 = ((m21 * mat.m14) +
+                  (m22 * mat.m24) +
+                  (m23 * mat.m34) +
+                  (m24 * mat.m44));
+    result.m31 = ((m31 * mat.m11) +
+                  (m32 * mat.m21) +
+                  (m33 * mat.m31) +
+                  (m34 * mat.m41));
+    result.m32 = ((m31 * mat.m12) +
+                  (m32 * mat.m22) +
+                  (m33 * mat.m32) +
+                  (m34 * mat.m42));
+    result.m33 = ((m31 * mat.m13) +
+                  (m32 * mat.m23) +
+                  (m33 * mat.m33) +
+                  (m34 * mat.m43));
+    result.m34 = ((m31 * mat.m14) +
+                  (m32 * mat.m24) +
+                  (m33 * mat.m34) +
+                  (m34 * mat.m44));
+    result.m41 = ((m41 * mat.m11) +
+                  (m42 * mat.m21) +
+                  (m43 * mat.m31) +
+                  (m44 * mat.m41));
+    result.m42 = ((m41 * mat.m12) +
+                  (m42 * mat.m22) +
+                  (m43 * mat.m32) +
+                  (m44 * mat.m42));
+    result.m43 = ((m41 * mat.m13) +
+                  (m42 * mat.m23) +
+                  (m43 * mat.m33) +
+                  (m44 * mat.m43));
+    result.m44 = ((m41 * mat.m14) +
+                  (m42 * mat.m24) +
+                  (m43 * mat.m34) +
+                  (m44 * mat.m44));
+
+    return result;
+}
+
+constexpr Mat4x4 Mat4x4::create_scale(float x, float y, float z)
+{
+    return Mat4x4(
+        x, 0, 0, 0,
+        0, y, 0, 0,
+        0, 0, z, 0,
+        0, 0, 0, 1);
+}
+
+constexpr Mat4x4 Mat4x4::create_translation(float x, float y, float z)
+{
+    return Mat4x4(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        x, y, z, 1);
+}
+
+inline Mat4x4 Mat4x4::create_rotation_z(float radians)
+{
+    return Mat4x4(
+        Math::cos(radians), Math::sin(radians), 0, 0,
+        -Math::sin(radians), Math::cos(radians), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1);
+}
+
+constexpr Mat4x4 Mat4x4::create_lookat(const Vec3f &camera_position, const Vec3f &camera_target, const Vec3f &camera_up)
+{
+    Vec3f camera_direction = camera_target - camera_position;
+
+    Vec3f vec_a = camera_direction.normalized();
+    Vec3f vec_b = camera_direction.cross(vec_a).normalized();
+    Vec3f vec_c = vec_a.cross(vec_b);
+
+    return Mat4x4(
+        vec_b.x, vec_c.x, vec_a.x, 0,
+        vec_b.y, vec_c.y, vec_a.y, 0,
+        vec_b.z, vec_c.z, vec_a.z, 0,
+        -vec_b.dot(camera_position), -vec_c.dot(camera_position), -vec_a.dot(camera_position), 1);
+}
+
+static constexpr Mat4x4 create_orthographic(float left, float right, float bottom, float top, float near_plane, float far_plane)
+{
+    return Mat4x4(
+        2.0f / (right - left), 0, 0, 0,
+        0, 2.0f / (top - bottom), 0, 0,
+        0, 0, 1.0f / (near_plane - far_plane), 0,
+        (left + right) / (left - right), (top + bottom) / (bottom - top), near_plane / (near_plane - far_plane), 1);
+}
+
+inline Mat4x4 Mat4x4::create_perspective(float fov, float aspect_ratio, float near_plane, float far_plane)
+{
+    float num = 1.0f / (static_cast<float>(Math::tan(fov * 0.5f)));
+    return Mat4x4(
+        num / aspect_ratio, 0, 0, 0,
+        0, num, 0, 0,
+        0, 0, far_plane / (near_plane - far_plane), -1,
+        0, 0, (near_plane * far_plane) / (near_plane - far_plane), 0);
+}
+
+inline std::string Mat4x4::to_string() const
+{
+    return "{m11: " + std::to_string(m11) + ", m12: " + std::to_string(m12) + ", m13: " + std::to_string(m13) + ", m14: " + std::to_string(m14) + "}\n" + "{m21: " + std::to_string(m21) + ", m22: " + std::to_string(m22) + ", m23: " + std::to_string(m23) + ", m24: " + std::to_string(m24) + "}\n" + "{m31: " + std::to_string(m31) + ", m32: " + std::to_string(m32) + ", m33: " + std::to_string(m33) + ", m34: " + std::to_string(m34) + "}\n" + "{m41: " + std::to_string(m41) + ", m42: " + std::to_string(m42) + ", m43: " + std::to_string(m43) + ", m44: " + std::to_string(m44) + "}";
+}
+
 // Hash defs
 // https://stackoverflow.com/questions/59060054/implement-hash-for-custom-class-c
 template <class T>
 struct std::hash<Vec2<T>>
 {
-	size_t operator()(Vec2<T> const &vec) const noexcept
-	{
-		std::hash<T> hasher{};
-		size_t h1 = hasher(vec.x);
-		size_t h2 = hasher(vec.y);
+    size_t operator()(Vec2<T> const &vec) const noexcept
+    {
+        std::hash<T> hasher{};
+        size_t h1 = hasher(vec.x);
+        size_t h2 = hasher(vec.y);
 
-		// Combine with XOR
-		return h1 ^ (h2 << 1);
-	}
+        // Combine with XOR
+        return h1 ^ (h2 << 1);
+    }
 };
