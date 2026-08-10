@@ -29,6 +29,11 @@ public:
     Shader(Game *_game, const char *vertex_path, const char *fragment_path);
     ~Shader();
 
+    Shader(const Shader&) = delete;
+    Shader(Shader&&) = delete;
+    Shader &operator=(const Shader&) = delete;
+    Shader &operator=(Shader&&) = delete;
+
     inline SDL_GPUShader *get_vertex() const
     {
         return vertex_shader;
@@ -49,6 +54,11 @@ public:
     Pipeline() = delete;
     Pipeline(Game *_game, const Shader &shader);
     ~Pipeline();
+
+    Pipeline(const Pipeline&) = delete;
+    Pipeline(Pipeline&&) = delete;
+    Pipeline &operator=(const Pipeline&) = delete;
+    Pipeline &operator=(Pipeline&&) = delete;
 };
 
 class Color
