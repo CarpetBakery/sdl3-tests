@@ -1,13 +1,40 @@
 #pragma once
 #include "spatial.h"
 
+#include <SDL3/SDL.h>
 #include <string>
+
+class Game;
 
 enum RendererType
 {
     Sdl,
     Gl,
     Gpu
+};
+
+class Shader
+{
+private:
+    SDL_GPUShader *vertex_shader = nullptr;
+    SDL_GPUShader *fragment_shader = nullptr;
+    Game *game = nullptr;
+    
+public:
+    unsigned int ID;
+
+    // Shader() = default;
+    Shader(Game *_game, const char *vertex_path, const char *fragment_path);
+    ~Shader();
+
+    inline const SDL_GPUShader *get_vertex() const
+    {
+        return vertex_shader;
+    }
+    inline const SDL_GPUShader *get_fragment() const
+    {
+        return fragment_shader;
+    }
 };
 
 class Color
