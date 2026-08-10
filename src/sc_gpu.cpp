@@ -32,9 +32,6 @@ namespace
         {0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f}   // bottom right vertex
     };
 
-    SDL_GPUShader *vertex_shader = nullptr;
-    SDL_GPUShader *fragment_shader = nullptr;
-
     SDL_GPUGraphicsPipeline *graphics_pipeline = nullptr;
     SDL_GPUBuffer *vertex_buffer = nullptr;
     SDL_GPUTransferBuffer *transfer_buffer = nullptr;
@@ -89,64 +86,17 @@ void SceneGpu::ready()
     }
 
     // -- Compile shaders --
-    {
-        std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
-        std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
+    std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
+    std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
 
-        LB_ASSERT(std::filesystem::exists(vertex_path), "Vertex shader not found.");
-        LB_ASSERT(std::filesystem::exists(fragment_path), "Fragment shader not found.");
-
-        // Vertex shader
-        size_t vertex_code_size;
-        void *vertex_code = SDL_LoadFile(vertex_path.c_str(), &vertex_code_size);
-
-        // Create the vertex shader
-        SDL_GPUShaderCreateInfo vertex_info{};
-        vertex_info.code = (Uint8 *)vertex_code; // Convert to array of bytes
-        vertex_info.code_size = vertex_code_size;
-        vertex_info.entrypoint = "main";
-        vertex_info.format = SDL_GPU_SHADERFORMAT_SPIRV; // For loading .spv shaders
-        vertex_info.stage = SDL_GPU_SHADERSTAGE_VERTEX;
-
-        // No textures, storage buffers, or uniforms (yet)
-        // I have to keep track of this per-shader...!?
-        // UPDATE: SDL_shadercross apparently has shader reflection that can fill this out
-        vertex_info.num_samplers = 0;
-        vertex_info.num_storage_buffers = 0;
-        vertex_info.num_storage_textures = 0;
-        vertex_info.num_uniform_buffers = 1;
-
-        vertex_shader = SDL_CreateGPUShader(game->get_device(), &vertex_info);
-        SDL_free(vertex_code);
-
-        // Fragment shader
-        size_t fragment_code_size;
-        void *fragment_code = SDL_LoadFile(fragment_path.c_str(), &fragment_code_size);
-
-        // Create the fragment shader
-
-        SDL_GPUShaderCreateInfo fragment_info{};
-        fragment_info.code = (Uint8 *)fragment_code;
-        fragment_info.code_size = fragment_code_size;
-        fragment_info.entrypoint = "main";
-        fragment_info.format = SDL_GPU_SHADERFORMAT_SPIRV;
-        fragment_info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
-
-        fragment_info.num_samplers = 0;
-        fragment_info.num_storage_buffers = 0;
-        fragment_info.num_storage_textures = 0;
-        fragment_info.num_uniform_buffers = 1;
-
-        fragment_shader = SDL_CreateGPUShader(game->get_device(), &fragment_info);
-        SDL_free(fragment_code);
-    }
+    Shader program = Shader(game, vertex_path.c_str(), fragment_path.c_str());
 
     // -- Setup pipeline --
     SDL_GPUGraphicsPipelineCreateInfo pipeline_info{};
 
     // Bind shaders
-    pipeline_info.vertex_shader = vertex_shader;
-    pipeline_info.fragment_shader = fragment_shader;
+    pipeline_info.vertex_shader = program.get_vertex();
+    pipeline_info.fragment_shader = program.get_fragment();
 
     // Draw triangles
     pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
@@ -198,8 +148,6 @@ void SceneGpu::ready()
 
     // Build pipeline, release shaders
     graphics_pipeline = SDL_CreateGPUGraphicsPipeline(game->get_device(), &pipeline_info);
-    SDL_ReleaseGPUShader(game->get_device(), vertex_shader);
-    SDL_ReleaseGPUShader(game->get_device(), fragment_shader);
 }
 
 void SceneGpu::destroy()

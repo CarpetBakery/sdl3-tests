@@ -24,14 +24,15 @@ public:
     unsigned int ID;
 
     // Shader() = default;
+    Shader() = delete;
     Shader(Game *_game, const char *vertex_path, const char *fragment_path);
     ~Shader();
 
-    inline const SDL_GPUShader *get_vertex() const
+    inline SDL_GPUShader *get_vertex() const
     {
         return vertex_shader;
     }
-    inline const SDL_GPUShader *get_fragment() const
+    inline SDL_GPUShader *get_fragment() const
     {
         return fragment_shader;
     }
