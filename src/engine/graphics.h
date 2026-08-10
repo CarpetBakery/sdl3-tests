@@ -4,13 +4,39 @@
 #include <SDL3/SDL.h>
 #include <string>
 
+using ResourceHandle = int;
+
 class Game;
+class Shader;
+class Pipeline;
+class GraphicsDevice;
+class Color;
 
 enum RendererType
 {
     Sdl,
     Gl,
     Gpu
+};
+
+enum GraphicsDriver
+{
+    None,
+    Vulkan,
+    D3d12,
+    Metal,
+    Web,
+};
+
+enum IndexFormat
+{
+    Sixteen,
+    ThirtyTwo,
+};
+
+struct DrawCommand
+{
+    // TODO
 };
 
 class Shader
@@ -20,7 +46,7 @@ private:
 
     SDL_GPUShader *vertex_shader = nullptr;
     SDL_GPUShader *fragment_shader = nullptr;
-    
+
 public:
     unsigned int ID;
 
@@ -29,10 +55,10 @@ public:
     Shader(Game *_game, const char *vertex_path, const char *fragment_path);
     ~Shader();
 
-    Shader(const Shader&) = delete;
-    Shader(Shader&&) = delete;
-    Shader &operator=(const Shader&) = delete;
-    Shader &operator=(Shader&&) = delete;
+    Shader(const Shader &) = delete;
+    Shader(Shader &&) = delete;
+    Shader &operator=(const Shader &) = delete;
+    Shader &operator=(Shader &&) = delete;
 
     inline SDL_GPUShader *get_vertex() const
     {
@@ -49,16 +75,63 @@ class Pipeline
 private:
     Game *game = nullptr;
     SDL_GPUGraphicsPipeline *graphics_pipeline = nullptr;
-    
+
 public:
     Pipeline() = delete;
     Pipeline(Game *_game, const Shader &shader);
     ~Pipeline();
 
-    Pipeline(const Pipeline&) = delete;
-    Pipeline(Pipeline&&) = delete;
-    Pipeline &operator=(const Pipeline&) = delete;
-    Pipeline &operator=(Pipeline&&) = delete;
+    Pipeline(const Pipeline &) = delete;
+    Pipeline(Pipeline &&) = delete;
+    Pipeline &operator=(const Pipeline &) = delete;
+    Pipeline &operator=(Pipeline &&) = delete;
+};
+
+class GraphicsDevice
+{
+public:
+    enum BufferType
+    {
+        Vertex,
+        Index,
+        Storage,
+        Compute,
+    };
+
+protected:
+    Game *game = nullptr;
+    GraphicsDriver driver;
+
+public:
+    GraphicsDevice(Game *_game) : game(_game) {}
+    virtual ~GraphicsDevice() = default;
+
+    GraphicsDevice(const GraphicsDevice &) = delete;
+    GraphicsDevice(GraphicsDevice &&) = delete;
+    GraphicsDevice &operator=(const GraphicsDevice &) = delete;
+    GraphicsDevice &operator=(GraphicsDevice &&) = delete;
+
+    virtual void create() = 0;
+    virtual void destroy() = 0;
+    // virtual void window_created() = 0;
+    // virtual void window_destroyed() = 0;
+    virtual void present() = 0;
+
+    // TODO: Need resource management
+    virtual ResourceHandle create_texture(const std::string &name, int width, int height, int format, int flags) = 0;
+    virtual void set_texture_data(ResourceHandle texture, void *data, int data_size, const Recti &dest) = 0;
+    virtual void get_texture_data(ResourceHandle texture, void *data, int data_size, const Recti &src) = 0;
+    virtual void blit_texture(ResourceHandle source_texture, const Recti &src, ResourceHandle dest_texture, const Recti &dst) = 0;
+    virtual ResourceHandle create_target(int width, int height) = 0;
+    virtual ResourceHandle create_shader(Shader &shader) = 0;
+    virtual ResourceHandle create_buffer(const std::string &name, BufferType type, IndexFormat format) = 0;
+    virtual void upload_buffer_data(ResourceHandle buffer, void *data, int data_size, int data_dest_offset) = 0;
+    virtual void destroy_resource(ResourceHandle resource) = 0;
+    virtual void perform_draw(const DrawCommand &command) = 0;
+    virtual void clear(const Color &color, float depth) = 0;
+
+    static GraphicsDevice *make_sdl(Game *_game);
+    // static GraphicsDevice *make_webgl(Game *_game); // There is going to be a lot of pain
 };
 
 class Color
