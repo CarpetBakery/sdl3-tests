@@ -16,9 +16,10 @@ enum RendererType
 class Shader
 {
 private:
+    Game *game = nullptr;
+
     SDL_GPUShader *vertex_shader = nullptr;
     SDL_GPUShader *fragment_shader = nullptr;
-    Game *game = nullptr;
     
 public:
     unsigned int ID;
@@ -36,6 +37,18 @@ public:
     {
         return fragment_shader;
     }
+};
+
+class Pipeline
+{
+private:
+    Game *game = nullptr;
+    SDL_GPUGraphicsPipeline *graphics_pipeline = nullptr;
+    
+public:
+    Pipeline() = delete;
+    Pipeline(Game *_game, const Shader &shader);
+    ~Pipeline();
 };
 
 class Color

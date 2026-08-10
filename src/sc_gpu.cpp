@@ -89,14 +89,14 @@ void SceneGpu::ready()
     std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
     std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
 
-    Shader program = Shader(game, vertex_path.c_str(), fragment_path.c_str());
+    Shader shader = Shader(game, vertex_path.c_str(), fragment_path.c_str());
 
     // -- Setup pipeline --
     SDL_GPUGraphicsPipelineCreateInfo pipeline_info{};
 
     // Bind shaders
-    pipeline_info.vertex_shader = program.get_vertex();
-    pipeline_info.fragment_shader = program.get_fragment();
+    pipeline_info.vertex_shader = shader.get_vertex();
+    pipeline_info.fragment_shader = shader.get_fragment();
 
     // Draw triangles
     pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
