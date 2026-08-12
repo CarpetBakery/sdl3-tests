@@ -962,7 +962,7 @@ constexpr Mat4x4 Mat4x4::create_lookat(const Vec3f &camera_position, const Vec3f
         -vec_b.dot(camera_position), -vec_c.dot(camera_position), -vec_a.dot(camera_position), 1);
 }
 
-static constexpr Mat4x4 create_orthographic(float left, float right, float bottom, float top, float near_plane, float far_plane)
+constexpr Mat4x4 Mat4x4::create_orthographic(float left, float right, float bottom, float top, float near_plane, float far_plane)
 {
     return Mat4x4(
         2.0f / (right - left), 0, 0, 0,
