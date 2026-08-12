@@ -22,3 +22,14 @@ public:
     void draw() override;
     void destroy() override;
 };
+
+class SceneGpuBatcher : public Scene
+{
+public:
+    SceneGpuBatcher() : Scene(RendererType::Gpu) {}
+
+    void ready() override;
+    void update() override;
+    void draw() override;
+    void destroy() override;
+};

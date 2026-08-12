@@ -19,6 +19,7 @@ public:
 
     ResourceHandle create_texture(const std::string &name, int width, int height, int format, int flags) override
     {
+        return 0;
     }
 
     void set_texture_data(ResourceHandle texture, void *data, int data_size, const Recti &dest) override
@@ -35,14 +36,17 @@ public:
 
     ResourceHandle create_target(int width, int height) override
     {
+        return 0;
     }
 
     ResourceHandle create_shader(Shader &shader) override
     {
+        return 0;
     }
 
     ResourceHandle create_buffer(const std::string &name, BufferType type, IndexFormat format) override
     {
+        return 0;
     }
 
     void upload_buffer_data(ResourceHandle buffer, void *data, int data_size, int data_dest_offset) override

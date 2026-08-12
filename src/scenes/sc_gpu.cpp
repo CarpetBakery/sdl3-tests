@@ -1,7 +1,7 @@
-#include "scenes.h"
-#include "engine/game.h"
-#include "engine/spatial.h"
-#include "engine/graphics.h"
+#include "../scenes.h"
+#include "../engine/game.h"
+#include "../engine/spatial.h"
+#include "../engine/graphics.h"
 
 #include <SDL3/SDL.h>
 #include <filesystem>
@@ -32,7 +32,7 @@ namespace
         {0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f}   // bottom right vertex
     };
 
-    SDL_GPUGraphicsPipeline *graphics_pipeline = nullptr;
+    Pipeline *pipeline = nullptr;
     SDL_GPUBuffer *vertex_buffer = nullptr;
     SDL_GPUTransferBuffer *transfer_buffer = nullptr;
 
@@ -42,24 +42,27 @@ namespace
 void SceneGpu::ready()
 {
     // Create vertex buffer
-    SDL_GPUBufferCreateInfo buffer_info{};
-    buffer_info.size = sizeof(vertices); // Is "sizeof" gonna work here???
-    buffer_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-    vertex_buffer = SDL_CreateGPUBuffer(game->get_device(), &buffer_info);
+    {
+        SDL_GPUBufferCreateInfo buffer_info{};
+        buffer_info.size = sizeof(vertices);
+        buffer_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+        vertex_buffer = SDL_CreateGPUBuffer(game->get_device(), &buffer_info);
+    }
 
     // Create transfer buffer
-    SDL_GPUTransferBufferCreateInfo transfer_info{};
-    transfer_info.size = sizeof(vertices);
-    transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-    transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &transfer_info);
+    {
+        SDL_GPUTransferBufferCreateInfo transfer_info{};
+        transfer_info.size = sizeof(vertices);
+        transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+        transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &transfer_info);
+    
+        // Fill transfer buffer with data
+        Vertex *data = (Vertex *)SDL_MapGPUTransferBuffer(game->get_device(), transfer_buffer, false);
+        memcpy(data, vertices, sizeof(vertices));
 
-    // Fill transfer buffer with data
-    Vertex *data = (Vertex *)SDL_MapGPUTransferBuffer(game->get_device(), transfer_buffer, false);
-
-    memcpy(data, vertices, sizeof(vertices));
-
-    // Unmap the pointer when done updating the transfer buffer
-    SDL_UnmapGPUTransferBuffer(game->get_device(), transfer_buffer);
+        // Unmap the pointer when done updating the transfer buffer
+        SDL_UnmapGPUTransferBuffer(game->get_device(), transfer_buffer);
+    }
 
     // -- Transfer data from transfer buffer to vertex buffer --
     {
@@ -88,66 +91,10 @@ void SceneGpu::ready()
     // -- Compile shaders --
     std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
     std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
-
     Shader shader = Shader(game, vertex_path.c_str(), fragment_path.c_str());
 
     // -- Setup pipeline --
-    SDL_GPUGraphicsPipelineCreateInfo pipeline_info{};
-
-    // Bind shaders
-    pipeline_info.vertex_shader = shader.get_vertex();
-    pipeline_info.fragment_shader = shader.get_fragment();
-
-    // Draw triangles
-    pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
-
-    // Describe the vertex buffers
-    SDL_GPUVertexBufferDescription vertex_buffer_descriptions[1];
-    vertex_buffer_descriptions[0].slot = 0;
-    vertex_buffer_descriptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
-    vertex_buffer_descriptions[0].instance_step_rate = 0;
-    vertex_buffer_descriptions[0].pitch = sizeof(Vertex);
-
-    pipeline_info.vertex_input_state.num_vertex_buffers = 1;
-    pipeline_info.vertex_input_state.vertex_buffer_descriptions = vertex_buffer_descriptions;
-
-    // Describe the vertex attribute
-    SDL_GPUVertexAttribute vertex_attributes[2];
-
-    // a_position
-    vertex_attributes[0].buffer_slot = 0;                             // Fetch data from the buffer at slot 0
-    vertex_attributes[0].location = 0;                                // Layout (location = 0) in shader
-    vertex_attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3; // vec3
-    vertex_attributes[0].offset = 0;                                  // Start from the first byte from current buffer position
-
-    // a_color
-    vertex_attributes[1].buffer_slot = 0;                             // Use buffer at slot 0
-    vertex_attributes[1].location = 1;                                // Layout (location = 1) in shader
-    vertex_attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4; // vec4
-    vertex_attributes[1].offset = sizeof(float) * 3;                  // 4th float from current buffer position
-
-    pipeline_info.vertex_input_state.num_vertex_attributes = 2;
-    pipeline_info.vertex_input_state.vertex_attributes = vertex_attributes;
-
-    // Describe the color target
-    SDL_GPUColorTargetDescription color_target_descriptions[1];
-    color_target_descriptions[0] = {};
-    color_target_descriptions[0].format = SDL_GetGPUSwapchainTextureFormat(game->get_device(), game->get_window());
-
-    // Example blending setup
-    // color_target_descriptions[0].blend_state.enable_blend = true;
-    // color_target_descriptions[0].blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
-    // color_target_descriptions[0].blend_state.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
-    // color_target_descriptions[0].blend_state.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
-    // color_target_descriptions[0].blend_state.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
-    // color_target_descriptions[0].blend_state.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
-    // color_target_descriptions[0].blend_state.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
-
-    pipeline_info.target_info.num_color_targets = 1;
-    pipeline_info.target_info.color_target_descriptions = color_target_descriptions;
-
-    // Build pipeline, release shaders
-    graphics_pipeline = SDL_CreateGPUGraphicsPipeline(game->get_device(), &pipeline_info);
+    pipeline = new Pipeline(game, shader);
 }
 
 void SceneGpu::destroy()
@@ -164,10 +111,10 @@ void SceneGpu::destroy()
         transfer_buffer = nullptr;
     }
 
-    if (graphics_pipeline)
+    if (pipeline)
     {
-        SDL_ReleaseGPUGraphicsPipeline(game->get_device(), graphics_pipeline);
-        graphics_pipeline = nullptr;
+        delete pipeline;
+        pipeline = nullptr;
     }
 }
 
@@ -212,7 +159,7 @@ void SceneGpu::draw()
         SDL_GPURenderPass *render_pass = SDL_BeginGPURenderPass(cmd_buf, &color_target_info, 1, NULL);
 
         // Bind pipeline
-        SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipeline);
+        pipeline->bind(render_pass);
 
         // Bind vertex buffer
         SDL_GPUBufferBinding buffer_bindings[1];

@@ -1,8 +1,8 @@
-#include "scenes.h"
+#include "../scenes.h"
 
-#include "engine/game.h"
-#include "engine/time.h"
-#include "engine/math.h"
+#include "../engine/game.h"
+#include "../engine/time.h"
+#include "../engine/math.h"
 
 #include <SDL3/SDL.h>
 #include <atomic>

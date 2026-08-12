@@ -10,9 +10,12 @@ layout (std140, set = 1, binding = 0) uniform UniformBlock {
 
 void main()
 {
-    vec3 new_pos = a_position;
-    new_pos.y += sin(time * 3.5) * 0.075;
+    // vec3 new_pos = a_position;
+    // new_pos.y += sin(time * 3.5) * 0.075;
     
-    gl_Position = vec4(new_pos, 1.0f);
+    // gl_Position = vec4(new_pos, 1.0f);
+    // v_color = a_color;
+
+    gl_Position = vec4(a_position, 1.0);
     v_color = a_color;
 }

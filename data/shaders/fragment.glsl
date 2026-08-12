@@ -12,8 +12,8 @@ layout (std140, set = 3, binding = 0) uniform UniformBlock {
 
 void main()
 {
-    float pulse = sin(time * 2.0) * 0.5 + 0.5; // Range [0, 1]
-    FragColor = vec4(v_color.rgb * (0.8 + pulse * 0.5), v_color.a);
+    // float pulse = sin(time * 2.0) * 0.5 + 0.5; // Range [0, 1]
+    // FragColor = vec4(v_color.rgb * (0.8 + pulse * 0.5), v_color.a);
     
-    // FragColor = v_color;
+    FragColor = v_color;
 }

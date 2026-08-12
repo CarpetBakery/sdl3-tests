@@ -85,6 +85,8 @@ public:
     Pipeline(Pipeline &&) = delete;
     Pipeline &operator=(const Pipeline &) = delete;
     Pipeline &operator=(Pipeline &&) = delete;
+
+    void bind(SDL_GPURenderPass *render_pass) const;
 };
 
 class GraphicsDevice
@@ -131,7 +133,7 @@ public:
     virtual void clear(const Color &color, float depth) = 0;
 
     static GraphicsDevice *make_sdl(Game *_game);
-    // static GraphicsDevice *make_webgl(Game *_game); // There is going to be a lot of pain
+    // static GraphicsDevice *make_gl(Game *_game); // There is going to be a lot of pain
 };
 
 class Color

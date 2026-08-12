@@ -55,10 +55,6 @@ Shader::Shader(Game *_game, const char *vertex_path, const char *fragment_path)
 
     fragment_shader = SDL_CreateGPUShader(game->get_device(), &fragment_info);
     SDL_free(fragment_code);
-
-    // Currently does nothing
-
-    // TODO: Bind to pipeline!?
 }
 
 Shader::~Shader()

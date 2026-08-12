@@ -67,3 +67,8 @@ Pipeline::~Pipeline()
         graphics_pipeline = nullptr;
     }
 }
+
+void Pipeline::bind(SDL_GPURenderPass *render_pass) const
+{
+    SDL_BindGPUGraphicsPipeline(render_pass, graphics_pipeline);
+}
