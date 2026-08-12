@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.24)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 
@@ -60,6 +60,7 @@ else()
     GIT_TAG release-3.4.12 # grab latest stable release
     GIT_PROGRESS TRUE
     GIT_SHALLOW TRUE
+    FIND_PACKAGE_ARGS CONFIG
   )
   FetchContent_MakeAvailable(SDL3)
 
