@@ -10,6 +10,7 @@ namespace
     };
 }
 
+// TODO: This is NOT a good abstraction of pipeline
 Pipeline::Pipeline(Game *_game, const Shader &shader)
     : game(_game)
 {

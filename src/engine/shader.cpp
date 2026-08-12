@@ -4,7 +4,18 @@
 
 #include <filesystem>
 
-Shader::Shader(Game *_game, const char *vertex_path, const char *fragment_path)
+// Um... consider making Shader only contain one shader instead of both vertex and fragment
+Shader::Shader(Game *_game,
+               const char *vertex_path,
+               int vertex_sampler_count,
+               int vertex_uniform_buffer_count,
+               int vertex_storage_buffer_count,
+               int vertex_storage_texture_count,
+               const char *fragment_path,
+               int fragment_sampler_count,
+               int fragment_uniform_buffer_count,
+               int fragment_storage_buffer_count,
+               int fragment_storage_texture_count)
     : game(_game)
 {
     LB_ASSERT(std::filesystem::exists(vertex_path), "Vertex shader not found.");
@@ -27,10 +38,10 @@ Shader::Shader(Game *_game, const char *vertex_path, const char *fragment_path)
     // No textures, storage buffers, or uniforms (yet)
     // I have to keep track of this per-shader...!?
     // UPDATE: SDL_shadercross apparently has shader reflection that can fill this out
-    vertex_info.num_samplers = 0;
-    vertex_info.num_storage_buffers = 0;
-    vertex_info.num_storage_textures = 0;
-    vertex_info.num_uniform_buffers = 1;
+    vertex_info.num_samplers = vertex_sampler_count;
+    vertex_info.num_storage_buffers = vertex_storage_buffer_count;
+    vertex_info.num_storage_textures = vertex_storage_texture_count;
+    vertex_info.num_uniform_buffers = vertex_uniform_buffer_count;
 
     vertex_shader = SDL_CreateGPUShader(game->get_device(), &vertex_info);
     SDL_free(vertex_code);
@@ -48,10 +59,10 @@ Shader::Shader(Game *_game, const char *vertex_path, const char *fragment_path)
     fragment_info.format = SDL_GPU_SHADERFORMAT_SPIRV;
     fragment_info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
 
-    fragment_info.num_samplers = 0;
-    fragment_info.num_storage_buffers = 0;
-    fragment_info.num_storage_textures = 0;
-    fragment_info.num_uniform_buffers = 1;
+    fragment_info.num_samplers = fragment_sampler_count;
+    fragment_info.num_storage_buffers = fragment_storage_buffer_count;
+    fragment_info.num_storage_textures = fragment_storage_texture_count;
+    fragment_info.num_uniform_buffers = fragment_uniform_buffer_count;
 
     fragment_shader = SDL_CreateGPUShader(game->get_device(), &fragment_info);
     SDL_free(fragment_code);
@@ -60,14 +71,14 @@ Shader::Shader(Game *_game, const char *vertex_path, const char *fragment_path)
 Shader::~Shader()
 {
     LB_ASSERT(game, "Reference to game not found.");
-    
+
     // Free program memory
     if (vertex_shader)
     {
         SDL_ReleaseGPUShader(game->get_device(), vertex_shader);
         vertex_shader = nullptr;
     }
-    
+
     if (fragment_shader)
     {
         SDL_ReleaseGPUShader(game->get_device(), fragment_shader);

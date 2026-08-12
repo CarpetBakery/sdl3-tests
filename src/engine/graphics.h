@@ -52,7 +52,17 @@ public:
 
     // Shader() = default;
     Shader() = delete;
-    Shader(Game *_game, const char *vertex_path, const char *fragment_path);
+    Shader(Game *_game,
+           const char *vertex_path,
+           int vertex_sampler_count,
+           int vertex_uniform_buffer_count,
+           int vertex_storage_buffer_count,
+           int vertex_storage_texture_count,
+           const char *fragment_path,
+           int fragment_sampler_count,
+           int fragment_uniform_buffer_count,
+           int fragment_storage_buffer_count,
+           int fragment_storage_texture_count);
     ~Shader();
 
     Shader(const Shader &) = delete;

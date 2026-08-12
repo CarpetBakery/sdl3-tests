@@ -55,7 +55,7 @@ void SceneGpu::ready()
         transfer_info.size = sizeof(vertices);
         transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
         transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &transfer_info);
-    
+
         // Fill transfer buffer with data
         Vertex *data = (Vertex *)SDL_MapGPUTransferBuffer(game->get_device(), transfer_buffer, false);
         memcpy(data, vertices, sizeof(vertices));
@@ -91,7 +91,9 @@ void SceneGpu::ready()
     // -- Compile shaders --
     std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
     std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
-    Shader shader = Shader(game, vertex_path.c_str(), fragment_path.c_str());
+    Shader shader = Shader(game,
+                           vertex_path.c_str(), 0, 0, 0, 1,
+                           fragment_path.c_str(), 0, 0, 0, 1);
 
     // -- Setup pipeline --
     pipeline = new Pipeline(game, shader);
