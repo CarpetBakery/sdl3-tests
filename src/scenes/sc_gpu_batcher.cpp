@@ -59,7 +59,11 @@ void SceneGpuBatcher::ready()
 
 void SceneGpuBatcher::destroy()
 {
-
+    if (sprite_pipeline)
+    {
+        SDL_ReleaseGPUGraphicsPipeline(game->get_device(), sprite_pipeline);
+        sprite_pipeline = nullptr;
+    }
 }
 
 void SceneGpuBatcher::update()
