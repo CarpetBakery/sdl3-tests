@@ -2,7 +2,6 @@
 #include "../engine/game.h"
 #include "../engine/graphics.h"
 
-
 namespace
 {
     struct Vertex
@@ -29,6 +28,8 @@ namespace
     UniformBuffer time_uniform{};
 }
 
+// https://moonside.games/posts/sdl-gpu-sprite-batcher/
+
 void SceneGpuBatcher::ready()
 {
     // Create vertex buffer
@@ -45,7 +46,7 @@ void SceneGpuBatcher::ready()
         transfer_info.size = sizeof(vertices);
         transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
         transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &transfer_info);
-    
+
         // Fill transfer buffer with data
         Vertex *data = (Vertex *)SDL_MapGPUTransferBuffer(game->get_device(), transfer_buffer, false);
         memcpy(data, vertices, sizeof(vertices));
@@ -110,7 +111,6 @@ void SceneGpuBatcher::destroy()
 
 void SceneGpuBatcher::update()
 {
-
 }
 
 void SceneGpuBatcher::draw()
@@ -162,5 +162,3 @@ void SceneGpuBatcher::draw()
 
     SDL_SubmitGPUCommandBuffer(cmd_buf);
 }
-
-

@@ -1,6 +1,7 @@
 #include "test_game.h"
 
 #include "scenes.h"
+#include "content.h"
 #include "engine/math.h"
 
 namespace
@@ -12,7 +13,7 @@ namespace
 
 void TestGame::ready(void *appstate)
 {
-
+    Content::load(this);
 }
 
 void TestGame::update(void *appstate)
@@ -54,5 +55,5 @@ void TestGame::draw(void *appstate)
 
 void TestGame::quit(void *appstate, SDL_AppResult result)
 {
-
+    Content::unload();
 }

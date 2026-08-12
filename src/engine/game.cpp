@@ -5,7 +5,6 @@
 #include <iostream>
 #include <filesystem>
 
-
 namespace
 {
     constexpr float draw_fps = 60.0f;
@@ -48,7 +47,7 @@ void Game::quit(void *appstate, SDL_AppResult result)
     }
 
     free_renderer();
-    
+
     if (window != NULL)
     {
         SDL_DestroyWindow(window);
@@ -73,7 +72,7 @@ bool Game::init_sdl()
         SDL_Log("Couldn't create window: %s", SDL_GetError());
         return false;
     }
-    
+
     return true;
 }
 
@@ -103,7 +102,7 @@ bool Game::init_renderer_gpu()
 {
     SDL_GPUShaderFormat shader_formats = SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL;
     device = SDL_CreateGPUDevice(shader_formats, true, NULL);
-    
+
     if (device == NULL)
     {
         SDL_Log("Couldn't create GPU device: %s", SDL_GetError());
@@ -140,7 +139,7 @@ bool Game::init_renderer(RendererType type)
         return true;
     }
     renderer_initialize_first_time = false;
-    
+
     switch (type)
     {
     case RendererType::Sdl:
@@ -179,19 +178,19 @@ bool Game::init_datapath()
     namespace fs = std::filesystem;
 
     // Make sure we are able to get the current working path
-	if (SDL_GetBasePath() == NULL)
-	{
-		// sdlErrBox("fatal: Could not find program base path.");
+    if (SDL_GetBasePath() == NULL)
+    {
+        // sdlErrBox("fatal: Could not find program base path.");
         SDL_Log("Couldn't find program base path: %s", SDL_GetError());
-		return false;
-	}
-	// std::string base_path = SDL_GetBasePath();
-	fs::path base_path = SDL_GetBasePath();
+        return false;
+    }
+    // std::string base_path = SDL_GetBasePath();
+    fs::path base_path = SDL_GetBasePath();
 
     // -- Get data path --
-	// Go up directories until we find it
-	// NOTE: If the file path becomes too long, this won't work
-    
+    // Go up directories until we find it
+    // NOTE: If the file path becomes too long, this won't work
+
     fs::path up_path = base_path;
     do
     {
