@@ -65,6 +65,11 @@ void SceneGpuBatcher::ready()
         pipeline_info.vertex_shader = vertex_shader.gpu_shader();
         pipeline_info.fragment_shader = fragment_shader.gpu_shader();
 
+
+        // NOTE: Could be failing because the hlsl shaders didn't get compiled correctly?
+        // Or the directx to spirv shader compiler is mangling it somehow?
+        // Might just use directX backend for this
+        
         sprite_pipeline = SDL_CreateGPUGraphicsPipeline(game->get_device(), &pipeline_info);
     }
 
