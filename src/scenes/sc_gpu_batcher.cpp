@@ -39,6 +39,7 @@ void SceneGpuBatcher::ready()
         Shader fragment_shader = Shader(game, Shader::Type::Fragment, fragment_path.c_str(), 1, 0, 0, 0);
 
         // -- Setup pipeline --
+        // Can't use my Pipeline class because it isn't flexible enough...
         SDL_GPUGraphicsPipelineCreateInfo pipeline_info;
         SDL_GPUGraphicsPipelineTargetInfo target_info;
         SDL_GPUColorTargetDescription color_target_info;
@@ -54,9 +55,10 @@ void SceneGpuBatcher::ready()
 
         color_target_info.format = SDL_GetGPUSwapchainTextureFormat(game->get_device(), game->get_window());
         color_target_info.blend_state = blend_state;
-
-        target_info.num_color_targets = 1;
+        
+        target_info.num_color_targets = 0;
         target_info.color_target_descriptions = &color_target_info;
+        // target_info.has_depth_stencil_target = false;
 
         pipeline_info.target_info = target_info;
         pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
