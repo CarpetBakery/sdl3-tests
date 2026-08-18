@@ -34,6 +34,8 @@ enum IndexFormat
     ThirtyTwo,
 };
 
+
+
 struct DrawCommand
 {
     // TODO
@@ -41,28 +43,30 @@ struct DrawCommand
 
 class Shader
 {
+public:
+    enum Type
+    {
+        Vertex,
+        Fragment,
+        Compute,
+    };
+    
 private:
     Game *game = nullptr;
-
-    SDL_GPUShader *vertex_shader = nullptr;
-    SDL_GPUShader *fragment_shader = nullptr;
+    SDL_GPUShader *shader = nullptr;
+    Type type;
 
 public:
     unsigned int ID;
 
-    // Shader() = default;
     Shader() = delete;
-    Shader(Game *_game,
-           const char *vertex_path,
-           int vertex_sampler_count,
-           int vertex_uniform_buffer_count,
-           int vertex_storage_buffer_count,
-           int vertex_storage_texture_count,
-           const char *fragment_path,
-           int fragment_sampler_count,
-           int fragment_uniform_buffer_count,
-           int fragment_storage_buffer_count,
-           int fragment_storage_texture_count);
+    Shader(Game *_game, Type _type,
+           const char *code_path,
+           int sampler_count,
+           int uniform_buffer_count,
+           int storage_buffer_count,
+           int storage_texture_count);
+
     ~Shader();
 
     Shader(const Shader &) = delete;
@@ -70,13 +74,14 @@ public:
     Shader &operator=(const Shader &) = delete;
     Shader &operator=(Shader &&) = delete;
 
-    inline SDL_GPUShader *get_vertex() const
+    inline SDL_GPUShader *gpu_shader() const
     {
-        return vertex_shader;
+        return shader;
     }
-    inline SDL_GPUShader *get_fragment() const
+
+    inline Type get_type() const
     {
-        return fragment_shader;
+        return type;
     }
 };
 
@@ -88,7 +93,7 @@ private:
 
 public:
     Pipeline() = delete;
-    Pipeline(Game *_game, const Shader &shader);
+    Pipeline(Game *_game, const Shader &vertex_shader, const Shader &fragment_shader);
     ~Pipeline();
 
     Pipeline(const Pipeline &) = delete;

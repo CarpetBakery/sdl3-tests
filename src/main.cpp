@@ -1,4 +1,4 @@
-#define SDL_MAIN_USE_CALLBACKS 1 // Use callbacks instead of the old overriding main method
+    #define SDL_MAIN_USE_CALLBACKS 1 // Use callbacks instead of the old overriding main method
 #include "test_game.h"
 #include "scenes.h"
 
@@ -29,9 +29,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
     
-    game.change_scene<SceneGpuBatcher>();
+    // game.change_scene<SceneGpuBatcher>();
     // game.change_scene<SceneGpu>();
-    // game.change_scene<SceneAudio>();
+    game.change_scene<SceneAudio>();
 
     return SDL_APP_CONTINUE;
 }

@@ -101,6 +101,10 @@ void Game::free_renderer_sdl()
 bool Game::init_renderer_gpu()
 {
     SDL_GPUShaderFormat shader_formats = SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL;
+
+    // TEMP: Hard code to vulkan for now
+    SDL_SetHint(SDL_HINT_GPU_DRIVER, "vulkan");
+    
     device = SDL_CreateGPUDevice(shader_formats, true, NULL);
 
     if (device == NULL)

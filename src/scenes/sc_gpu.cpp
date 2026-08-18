@@ -91,12 +91,14 @@ void SceneGpu::ready()
     // -- Compile shaders --
     std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
     std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
-    Shader shader = Shader(game,
-                           vertex_path.c_str(), 0, 0, 0, 1,
-                           fragment_path.c_str(), 0, 0, 0, 1);
+    // Shader shader = Shader(game,
+    //                        vertex_path.c_str(), 0, 0, 0, 1,
+    //                        fragment_path.c_str(), 0, 0, 0, 1);
+    Shader vertex_shader = Shader(game, Shader::Type::Vertex, vertex_path.c_str(), 0, 0, 0, 1);
+    Shader fragment_shader = Shader(game, Shader::Type::Fragment, fragment_path.c_str(), 0, 0, 0, 1);
 
     // -- Setup pipeline --
-    pipeline = new Pipeline(game, shader);
+    pipeline = new Pipeline(game, vertex_shader, fragment_shader);
 }
 
 void SceneGpu::destroy()

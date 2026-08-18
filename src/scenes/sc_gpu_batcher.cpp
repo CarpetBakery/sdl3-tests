@@ -34,9 +34,9 @@ void SceneGpuBatcher::ready()
         // -- Compile shaders --
         std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
         std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
-        Shader shader = Shader(game,
-                               vertex_path.c_str(), 0, 1, 1, 0,
-                               fragment_path.c_str(), 1, 0, 0, 0);
+
+        Shader vertex_shader = Shader(game, Shader::Type::Vertex, vertex_path.c_str(), 0, 1, 1, 0);
+        Shader fragment_shader = Shader(game, Shader::Type::Fragment, fragment_path.c_str(), 1, 0, 0, 0);
 
         // -- Setup pipeline --
         SDL_GPUGraphicsPipelineCreateInfo pipeline_info;
@@ -60,8 +60,8 @@ void SceneGpuBatcher::ready()
 
         pipeline_info.target_info = target_info;
         pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
-        pipeline_info.vertex_shader = shader.get_vertex();
-        pipeline_info.fragment_shader = shader.get_fragment();
+        pipeline_info.vertex_shader = vertex_shader.gpu_shader();
+        pipeline_info.fragment_shader = fragment_shader.gpu_shader();
 
         sprite_pipeline = SDL_CreateGPUGraphicsPipeline(game->get_device(), &pipeline_info);
     }

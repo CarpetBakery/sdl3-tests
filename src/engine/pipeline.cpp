@@ -11,12 +11,12 @@ namespace
 }
 
 // TODO: This is NOT a good abstraction of pipeline
-Pipeline::Pipeline(Game *_game, const Shader &shader)
+Pipeline::Pipeline(Game *_game, const Shader &vertex_shader, const Shader &fragment_shader)
     : game(_game)
 {
     SDL_GPUGraphicsPipelineCreateInfo pipeline_info{};
-    pipeline_info.vertex_shader = shader.get_vertex();
-    pipeline_info.fragment_shader = shader.get_fragment();
+    pipeline_info.vertex_shader = vertex_shader.gpu_shader();
+    pipeline_info.fragment_shader = fragment_shader.gpu_shader();
 
     pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
