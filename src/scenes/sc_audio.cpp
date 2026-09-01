@@ -57,6 +57,9 @@ namespace
     };
 
     // -- Edit sample --
+
+
+    // -- The shapes --
     constexpr int RECT_COUNT = 20;
     Recti test_rects[RECT_COUNT];
 }
