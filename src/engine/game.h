@@ -54,6 +54,9 @@ private:
 
     bool init_datapath();
 
+
+    void update_screen_surface_size();
+
 protected:
     virtual void ready(void *appstate);
     virtual void update(void *appstate);
@@ -96,6 +99,7 @@ public:
         // LB_ASSERT(scene->renderer_type == config.renderer_type, "Scene requires different renderer type than initialized.");
 
         scene->game = this; 
+        scene->input = &input;
         scene->ready();
 
         return (T*)scene.get();

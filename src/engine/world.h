@@ -7,6 +7,7 @@ class Scene;
 class Entity;
 class Component;
 class Game;
+class Input;
 
 
 class Scene
@@ -17,6 +18,7 @@ private:
 
 protected:
     Game *game = nullptr;
+    Input *input = nullptr;
     
 public:
     RendererType renderer_type = RendererType::Sdl;

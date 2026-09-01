@@ -84,7 +84,7 @@ void Input::event_mouse_wheel(SDL_Event *event)
 {
     mouse_wheel_state += event->wheel.y;
 }
-
+    
 void Input::event_mouse_motion(SDL_Event *event, Game *game)
 {
     int x = event->motion.x;
@@ -93,20 +93,19 @@ void Input::event_mouse_motion(SDL_Event *event, Game *game)
     int yRel = event->motion.yrel;
 
     float m_scale_x, m_scale_y;
-	Vec2f screen_size = game->get_backbuffer_size();
-	Vec2f window_size = game->window_size();
+	Vec2f backbuffer_size = game->get_backbuffer_size();
 	Rect screen_surf_size = game->get_screen_surface_size();
 
 	// Convert mouse position to be scale (0-1) where (0, 0) is top left of window, (1, 1) is bot-right
-	m_scale_x = static_cast<float>(x) / static_cast<float>(SDL_max(screen_surf_size.w, 1));
-	m_scale_y = static_cast<float>(y) / static_cast<float>(SDL_max(screen_surf_size.h, 1));
+	m_scale_x = static_cast<float>(x) / static_cast<float>(Math::Max(screen_surf_size.w, 1));
+	m_scale_y = static_cast<float>(y) / static_cast<float>(Math::Max(screen_surf_size.h, 1));
 
 	// Fix mouse position for weird aspect ratios
-	m_scale_x -= static_cast<float>(screen_surf_size.x) / static_cast<float>(SDL_max(screen_surf_size.w, 1));
-	m_scale_y -= static_cast<float>(screen_surf_size.y) / static_cast<float>(SDL_max(screen_surf_size.h, 1));
+	m_scale_x -= static_cast<float>(screen_surf_size.x) / static_cast<float>(Math::Max(screen_surf_size.w, 1));
+	m_scale_y -= static_cast<float>(screen_surf_size.y) / static_cast<float>(Math::Max(screen_surf_size.h, 1));
 
 	// Use screenSize to calculate final mouse position
-	mouse_pos = Vec2i(static_cast<int>(screen_size.x * m_scale_x), static_cast<int>(screen_size.y * m_scale_y));
+	mouse_pos = Vec2i(static_cast<int>(backbuffer_size.x * m_scale_x), static_cast<int>(backbuffer_size.y * m_scale_y));
 	mouse_pos_relative = Vec2i(xRel, yRel);
 }
 

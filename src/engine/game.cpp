@@ -32,8 +32,10 @@ bool Game::init(void *appstate, const GameConfig &info)
     // Init frame limiter
     game_time_last = Time::getTicks();
     game_time_accumulator = 0;
-
+    
     input.init();
+    
+    update_screen_surface_size();
 
     ready(appstate);
     return true;
@@ -280,6 +282,32 @@ void Game::tick(void *appstate)
     SDL_RenderPresent(renderer);
 }
 
+void Game::update_screen_surface_size()
+{
+    Vec2i wsize = window_size();
+    
+    float aspectW = backbuffer_width / static_cast<float>(backbuffer_height);
+    float aspectH = backbuffer_height / static_cast<float>(backbuffer_width);
+    
+    float xx = 0.0f;
+    float yy = 0.0f;
+    float w = static_cast<float>(wsize.x);
+    float h = static_cast<float>(wsize.y);
+
+    if (w <= h)
+    {
+        h = aspectH * w;
+        yy = (static_cast<float>(wsize.y) - h) * 0.5f;
+    }
+    else
+    {
+        w = aspectW * h;
+        xx = (static_cast<float>(wsize.x) - w) * 0.5f;
+    }
+    
+    screen_surface_size = Recti(Math::floor(xx), Math::floor(yy), Math::floor(w), Math::floor(h));
+}
+
 void Game::ready(void *appstate)
 {
 }
@@ -321,16 +349,7 @@ void Game::event(void *appstate, SDL_Event *event)
         break;
     
     case SDL_EVENT_WINDOW_RESIZED:
-    {
-        Vec2i size = window_size();
-		float w, h;
-		float xx = 0.f;
-		float yy = 0.f;
-		w = (float)size.x;
-		h = (float)size.y;
-
-		screen_surface_size = Recti((int)floor(xx), (int)floor(yy), (int)floor(w), (int)floor(h));
-    }
+        update_screen_surface_size();
         break;
 
     }

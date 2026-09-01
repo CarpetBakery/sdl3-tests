@@ -118,6 +118,16 @@ void SceneAudio::draw()
 
     SDL_RenderDebugText(renderer, 124, 200, "Use the bottom row of keys on the keyboard like a piano!");
     SDL_RenderDebugTextFormat(renderer, 224, 225, "Pitch: %" SDL_PRIs32, (int)pitch);
+
+    auto mouse_pos = input->get_mouse_pos();
+    if (input->mouse(MouseButton::Left))
+    {
+        SDL_RenderDebugText(renderer, mouse_pos.x, mouse_pos.y, "Morshu");
+    }
+    else
+    {
+        SDL_RenderDebugText(renderer, mouse_pos.x, mouse_pos.y, "Non-Morshu");
+    }
     
     if (audio_playing)
     {

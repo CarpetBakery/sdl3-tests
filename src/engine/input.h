@@ -53,5 +53,5 @@ public:
     const bool mouse(MouseButton btn) const;
     const bool mouse_pressed(MouseButton btn) const;
     inline const int mouse_wheel() const { return mouse_wheel_state; }
-
+    inline const Vec2i get_mouse_pos() const { return mouse_pos; }
 };
