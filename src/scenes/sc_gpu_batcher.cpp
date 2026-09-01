@@ -32,18 +32,21 @@ void SceneGpuBatcher::ready()
 {
     {
         // -- Compile shaders --
-        std::string vertex_path = game->get_datapath() + "/shaders/vertex.spv";
-        std::string fragment_path = game->get_datapath() + "/shaders/fragment.spv";
+        // std::string vertex_path = game->get_datapath() + "/shaders/batcher_vertex.spv";
+        // std::string fragment_path = game->get_datapath() + "/shaders/batcher_fragment.spv";
+
+        std::string vertex_path = game->get_datapath() + "/shaders/pull_sprite_batch.vert.spv";
+        std::string fragment_path = game->get_datapath() + "/shaders/textured_quad.frag.spv";
 
         Shader vertex_shader = Shader(game, Shader::Type::Vertex, vertex_path.c_str(), 0, 1, 1, 0);
         Shader fragment_shader = Shader(game, Shader::Type::Fragment, fragment_path.c_str(), 1, 0, 0, 0);
 
         // -- Setup pipeline --
         // Can't use my Pipeline class because it isn't flexible enough...
-        SDL_GPUGraphicsPipelineCreateInfo pipeline_info;
-        SDL_GPUGraphicsPipelineTargetInfo target_info;
-        SDL_GPUColorTargetDescription color_target_info;
-        SDL_GPUColorTargetBlendState blend_state;
+        SDL_GPUGraphicsPipelineCreateInfo pipeline_info{};
+        SDL_GPUGraphicsPipelineTargetInfo target_info{};
+        SDL_GPUColorTargetDescription color_target_info{};
+        SDL_GPUColorTargetBlendState blend_state{};
 
         blend_state.enable_blend = true;
         blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
@@ -84,7 +87,7 @@ void SceneGpuBatcher::ready()
 
         int image_data_size = image_data->w * image_data->h * 4;
 
-        SDL_GPUTransferBufferCreateInfo image_transfer_info;
+        SDL_GPUTransferBufferCreateInfo image_transfer_info{};
         image_transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
         image_transfer_info.size = image_data_size;
 
@@ -95,7 +98,7 @@ void SceneGpuBatcher::ready()
         SDL_UnmapGPUTransferBuffer(game->get_device(), texture_transfer_buffer);
 
         // Create the GPU resources
-        SDL_GPUTextureCreateInfo texture_create_info;
+        SDL_GPUTextureCreateInfo texture_create_info{};
         texture_create_info.type = SDL_GPU_TEXTURETYPE_2D;
         texture_create_info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
         texture_create_info.width = image_data->w;
@@ -106,7 +109,7 @@ void SceneGpuBatcher::ready()
 
         texture = SDL_CreateGPUTexture(game->get_device(), &texture_create_info);
 
-        SDL_GPUSamplerCreateInfo sampler_info;
+        SDL_GPUSamplerCreateInfo sampler_info{};
         sampler_info.min_filter = SDL_GPU_FILTER_NEAREST;
         sampler_info.mag_filter = SDL_GPU_FILTER_NEAREST;
         sampler_info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
@@ -116,13 +119,13 @@ void SceneGpuBatcher::ready()
 
         sampler = SDL_CreateGPUSampler(game->get_device(), &sampler_info);
 
-        SDL_GPUTransferBufferCreateInfo sprite_data_transfer_buffer_info;
+        SDL_GPUTransferBufferCreateInfo sprite_data_transfer_buffer_info{};
         sprite_data_transfer_buffer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
         sprite_data_transfer_buffer_info.size = sprite_count * sizeof(SpriteInstance);
         
         sprite_data_transfer_buffer = SDL_CreateGPUTransferBuffer(game->get_device(), &sprite_data_transfer_buffer_info);
 
-        SDL_GPUBufferCreateInfo sprite_data_buffer_info;
+        SDL_GPUBufferCreateInfo sprite_data_buffer_info{};
         sprite_data_buffer_info.usage = SDL_GPU_BUFFERUSAGE_GRAPHICS_STORAGE_READ;
         sprite_data_buffer_info.size = sprite_count * sizeof(SpriteInstance);
         
@@ -132,11 +135,11 @@ void SceneGpuBatcher::ready()
         SDL_GPUCommandBuffer *upload_cmd_buf = SDL_AcquireGPUCommandBuffer(game->get_device());
         SDL_GPUCopyPass *copy_pass = SDL_BeginGPUCopyPass(upload_cmd_buf);
 
-        SDL_GPUTextureTransferInfo texture_transfer_buffer_info;
+        SDL_GPUTextureTransferInfo texture_transfer_buffer_info{};
         texture_transfer_buffer_info.transfer_buffer = texture_transfer_buffer;
         texture_transfer_buffer_info.offset = 0;
 
-        SDL_GPUTextureRegion region;
+        SDL_GPUTextureRegion region{};
         region.texture = texture;
         region.w = image_data->w;
         region.h = image_data->h;
@@ -213,11 +216,11 @@ void SceneGpuBatcher::draw()
 
         // Upload sprite data
         {
-            SDL_GPUTransferBufferLocation loc;
+            SDL_GPUTransferBufferLocation loc{};
             loc.transfer_buffer = sprite_data_transfer_buffer;
             loc.offset = 0;
 
-            SDL_GPUBufferRegion reg;
+            SDL_GPUBufferRegion reg{};
             reg.buffer = sprite_data_buffer;
             reg.offset = 0;
             reg.size = sprite_count * sizeof(SpriteInstance);
@@ -229,14 +232,14 @@ void SceneGpuBatcher::draw()
 
         // Render sprites
         {
-            SDL_GPUColorTargetInfo color_target_info;
+            SDL_GPUColorTargetInfo color_target_info{};
             color_target_info.texture = swapchain_tex;
             color_target_info.cycle = false;
             color_target_info.load_op = SDL_GPU_LOADOP_CLEAR;
             color_target_info.store_op = SDL_GPU_STOREOP_STORE;
             color_target_info.clear_color = {0, 0, 0, 1};
 
-            SDL_GPUTextureSamplerBinding texture_sampler_binding;
+            SDL_GPUTextureSamplerBinding texture_sampler_binding{};
             texture_sampler_binding.texture = texture;
             texture_sampler_binding.sampler = sampler;
 
