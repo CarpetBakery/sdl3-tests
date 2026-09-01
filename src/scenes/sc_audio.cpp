@@ -17,6 +17,15 @@ namespace
     };
     State state = State::EditSample;
 
+    enum InstrumentMode
+    {
+        Sine,
+        Custom
+    };
+    std::atomic<InstrumentMode> instrument_mode = InstrumentMode::Custom;
+
+    bool program_startup = true;
+
     // Audio
     constexpr int DEFAULT_SAMPLE_RATE = 44100;
     constexpr int AUDIO_BUFFER_SIZE_SAMPLES = 512;
@@ -100,6 +109,17 @@ namespace
             data_size = new_size;
             data = std::move(tmp);
         }
+
+        // Fill data with a sine wave
+        void fill_sine()
+        {
+            for (int i = 0; i < data_size; i++)
+            {
+                float fac = i / static_cast<float>(data_size);
+                fac *= Math::pi * 2.0f;
+                data[i] = Math::sin(fac) * 0.4f;
+            }
+        }
     };
 
     class Synth
@@ -108,7 +128,7 @@ namespace
         float data_index = 0.0f;
         SampleData *sample_data = nullptr;
 
-        void incDataIndex(int pitch)
+        void inc_data_index(int pitch)
         {
             // Increment index, wrap around
             float inc = Math::pow(twelve_root_2, pitch);
@@ -150,7 +170,7 @@ namespace
     constexpr int INIT_SAMPLE_COUNT = 128;
     Synth synth;
     SampleData sample_data;
-    
+
     int edit_margin = 30;
     int edit_bottom_margin = 50;
     int edit_inner_margin = 15;
@@ -172,6 +192,7 @@ static void free_audio();
 static void audio_callback(void *userdata, SDL_AudioStream *stream, int additionalAmount, int totalAmount);
 
 static void regenerate_rects(SceneAudio *scene);
+static void musical_typing(SceneAudio *scene);
 
 // -- States --
 static void switch_state(SceneAudio *scene, State new_state);
@@ -276,7 +297,15 @@ static void init_audio(SceneAudio *scene)
     // Setup synth and sampledata
     sample_data.resize(INIT_SAMPLE_COUNT);
     synth.sample_data = &sample_data;
-    
+
+    if (program_startup)
+    {
+        program_startup = false;
+
+        // Generate sin wave at startup
+        sample_data.fill_sine();
+    }
+
     // The shapes
     regenerate_rects(scene);
 }
@@ -297,25 +326,44 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
     float *buf = new float[samples];
     memset(buf, 0, totalAmount);
 
-    for (int i = 0; i < samples; i += 2)
+    switch (instrument_mode.load())
     {
-        float sample = Math::sin(siner * 2.0f * SDL_PI_F);
-        for (int j = 0; j < AUDIO_CHANNELS; j++)
+    case InstrumentMode::Sine:
+        for (int i = 0; i < samples; i += 2)
         {
-            buf[i + j] = sample;
-        }
+            float sample = Math::sin(siner * 2.0f * SDL_PI_F);
+            for (int j = 0; j < AUDIO_CHANNELS; j++)
+            {
+                buf[i + j] = sample;
+            }
 
-        siner += (1.0f / (float)DEFAULT_SAMPLE_RATE) * 440.0f * Math::pow(twelve_root_2, pitch.load());
-        while (siner > 1.0f)
-        {
-            siner -= 1.0f;
+            siner += (1.0f / (float)DEFAULT_SAMPLE_RATE) * 440.0f * Math::pow(twelve_root_2, pitch.load());
+            while (siner > 1.0f)
+            {
+                siner -= 1.0f;
+            }
         }
+        break;
+
+    case InstrumentMode::Custom:
+        for (int i = 0; i < samples; i += 2)
+        {
+            // NOTE: This is SUPER thread unsafe. Editing sample data while audio thread
+            // is reading it could be catastrophic
+            float sample = synth.eval_lagrange();
+            synth.inc_data_index(pitch.load());
+
+            for (int j = 0; j < AUDIO_CHANNELS; j++)
+            {
+                buf[i + j] = sample;
+            }
+        }
+        break;
     }
 
     // I think I might be using this wrong... not sure how to set the size of a buffer yet.
     // "totalAmount" seems to be over 3000 samples. Pretty big compared to what I normally use (512, 1024)
     SDL_PutAudioStreamData(stream, buf, totalAmount);
-
     delete[] buf;
 }
 
@@ -348,24 +396,7 @@ static void main_update(SceneAudio *scene)
         return;
     }
 
-    audio_playing = false;
-    for (int i = 0; i < key_count; i++)
-    {
-        if (scene->game->input.key(keys[i]))
-        {
-            pitch.store(i);
-            audio_playing = true;
-        }
-    }
-
-    if (!audio_playing)
-    {
-        SDL_PauseAudioStreamDevice(audio_stream);
-    }
-    else
-    {
-        SDL_ResumeAudioStreamDevice(audio_stream);
-    }
+    musical_typing(scene);
 }
 
 static void main_draw(SceneAudio *scene)
@@ -407,28 +438,39 @@ static void edit_sample_update(SceneAudio *scene)
         switch_state(scene, State::Main);
     }
 
-    auto mouse_pos = scene->input->get_mouse_pos();
-    Linef mouse_line = Linef(mouse_pos_prev, mouse_pos);
-
-    int sample_count = sample_data.data_size;
-    float *custom_sample = sample_data.data.get();
-
-    int w = Math::floor(edit_space.w / static_cast<float>(sample_count));
-    for (int i = 0; i < sample_count; i++)
+    if (scene->input->key_pressed(SDLK_R))
     {
-        Recti r = Recti(
-            edit_space.x + edit_space.w * (i / static_cast<float>(sample_count)),
-            edit_space.y,
-            w,
-            edit_space.h);
+        sample_data.fill_sine();
+    }
 
-        if (mouse_line.intersects(r))
+    auto mouse_pos = scene->input->get_mouse_pos();
+
+    // Draw the sample!
+    if (scene->input->mouse(MouseButton::Left))
+    {
+        Linef mouse_line = Linef(mouse_pos_prev, mouse_pos);
+
+        int sample_count = sample_data.data_size;
+        float *custom_sample = sample_data.data.get();
+
+        int w = Math::floor(edit_space.w / static_cast<float>(sample_count));
+        for (int i = 0; i < sample_count; i++)
         {
-            custom_sample[i] = (mouse_pos.y - edit_space.y - edit_space.h / 2.0f) / (edit_space.h / 2.0f);
-            printf("%f\n", custom_sample[i]);
+            Recti r = Recti(
+                edit_space.x + edit_space.w * (i / static_cast<float>(sample_count)),
+                -edit_margin + edit_space.y,
+                w,
+                edit_margin * 2.0f + edit_space.h);
+
+            if (mouse_line.intersects(r))
+            {
+                custom_sample[i] = (mouse_pos.y - edit_space.y - edit_space.h / 2.0f) / (edit_space.h / 2.0f);
+                custom_sample[i] = Math::clampf(custom_sample[i], -1.0f, 1.0f);
+            }
         }
     }
 
+    musical_typing(scene);
     mouse_pos_prev = mouse_pos;
 }
 
@@ -443,9 +485,9 @@ static void edit_sample_draw(SceneAudio *scene)
 
     int sample_count = sample_data.data_size;
     float *custom_sample = sample_data.data.get();
-    
+
     // Draw samples
-    SDL_SetRenderDrawColor(renderer, 0, 255, 100, SDL_ALPHA_OPAQUE);
+    Vec2i prev_point = Vec2i(0, 0);
     for (int i = 0; i < sample_count; i++)
     {
         float bip_width = 2.0f;
@@ -455,7 +497,16 @@ static void edit_sample_draw(SceneAudio *scene)
             bip_width,
             bip_width};
 
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
         SDL_RenderRect(renderer, &r);
+
+        // Draw a line between samples
+        if (i > 0)
+        {
+            SDL_SetRenderDrawColor(renderer, 0, 100, 120, SDL_ALPHA_OPAQUE);
+            SDL_RenderLine(renderer, r.x, r.y, prev_point.x, prev_point.y);
+        }
+        prev_point = Vec2i(r.x, r.y);
     }
 }
 
@@ -547,6 +598,28 @@ static void the_shapes_draw(SceneAudio *scene)
             static_cast<float>(test_rects[i].h)};
 
         SDL_RenderRect(renderer, &r);
+    }
+}
+
+static void musical_typing(SceneAudio *scene)
+{
+    audio_playing = false;
+    for (int i = 0; i < key_count; i++)
+    {
+        if (scene->game->input.key(keys[i]))
+        {
+            pitch.store(i);
+            audio_playing = true;
+        }
+    }
+
+    if (!audio_playing)
+    {
+        SDL_PauseAudioStreamDevice(audio_stream);
+    }
+    else
+    {
+        SDL_ResumeAudioStreamDevice(audio_stream);
     }
 }
 
