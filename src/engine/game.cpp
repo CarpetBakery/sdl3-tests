@@ -264,6 +264,7 @@ void Game::tick(void *appstate)
 
         input.update();
         update(appstate);
+
         if (scene)
         {
             scene->update();
@@ -293,13 +294,45 @@ void Game::draw(void *appstate)
 
 void Game::event(void *appstate, SDL_Event *event)
 {
-    if (event->type == SDL_EVENT_KEY_DOWN)
+    switch (event->type)
     {
+    case SDL_EVENT_KEY_DOWN:
         input.keyboard_state[event->key.scancode] = true;
-    }
-    else if (event->type == SDL_EVENT_KEY_UP)
-    {
+        break;
+        
+    case SDL_EVENT_KEY_UP:
         input.keyboard_state[event->key.scancode] = false;
+        break;
+        
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        input.event_mouse_down(event);
+        break;
+        
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        input.event_mouse_up(event);
+        break;
+        
+    case SDL_EVENT_MOUSE_WHEEL:
+        input.event_mouse_wheel(event);
+        break;
+
+    case SDL_EVENT_MOUSE_MOTION:
+        input.event_mouse_motion(event, this);
+        break;
+    
+    case SDL_EVENT_WINDOW_RESIZED:
+    {
+        Vec2i size = window_size();
+		float w, h;
+		float xx = 0.f;
+		float yy = 0.f;
+		w = (float)size.x;
+		h = (float)size.y;
+
+		screen_surface_size = Recti((int)floor(xx), (int)floor(yy), (int)floor(w), (int)floor(h));
+    }
+        break;
+
     }
 }
 

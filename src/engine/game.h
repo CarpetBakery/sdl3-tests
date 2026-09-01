@@ -26,8 +26,12 @@ private:
     // The current scene
     std::unique_ptr<Scene> scene = nullptr;
 
+    // Size of the backbuffer texture
     int backbuffer_width = 0;
     int backbuffer_height = 0;
+
+    // Scaled size of the backbuffer texture inside the window (changes with window size)
+    Recti screen_surface_size;
 
     // Used to initialize renderer when calling init_renderer for the first time
     bool renderer_initialize_first_time = true;
@@ -120,12 +124,22 @@ public:
         return h;
     }
 
+    inline const Vec2i window_size() const
+    {
+        int w, h;
+        SDL_GetWindowSize(window, &w, &h);
+        return Vec2i(w, h);
+    }
+
+    inline const Recti get_screen_surface_size() const { return screen_surface_size; }
+
     inline Scene *get_scene() { return scene.get(); }
     inline const Scene *get_scene() const { return scene.get(); }
 
     // TEMP solution
     inline const int get_backbuffer_width() const { return backbuffer_width; }
     inline const int get_backbuffer_height() const { return backbuffer_height; }
+    inline const Vec2i get_backbuffer_size() const { return Vec2i(backbuffer_width, backbuffer_height); }
 
     inline std::string get_datapath() { return data_path; }
     inline const std::string get_datapath() const { return data_path; }
