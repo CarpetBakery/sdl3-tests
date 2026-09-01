@@ -56,10 +56,101 @@ namespace
         SDLK_SLASH,
     };
 
-    // -- Edit sample --
-    int sample_count = 128;
-    float *custom_sample = nullptr;
+    class SampleData
+    {
+    public:
+        std::unique_ptr<float[]> data = nullptr;
+        int data_size = 0;
 
+        float get(float index)
+        {
+            return data[static_cast<int>(index)];
+        }
+
+        float get_safe(float index)
+        {
+            while (index < 0)
+            {
+                index += data_size;
+            }
+            while (index >= data_size)
+            {
+                index -= data_size;
+            }
+            return get(index);
+        }
+
+        void resize(int new_size)
+        {
+            if (data_size == new_size)
+            {
+                return;
+            }
+
+            std::unique_ptr<float[]> tmp = std::make_unique<float[]>(new_size);
+            memset(tmp.get(), 0, new_size * sizeof(float));
+
+            // Move old data
+            if (data != nullptr && data_size > 0)
+            {
+                memcpy(tmp.get(), data.get(), Math::Min(data_size, new_size));
+            }
+
+            // Move everything over
+            data_size = new_size;
+            data = std::move(tmp);
+        }
+    };
+
+    class Synth
+    {
+    public:
+        float data_index = 0.0f;
+        SampleData *sample_data = nullptr;
+
+        void incDataIndex(int pitch)
+        {
+            // Increment index, wrap around
+            float inc = Math::pow(twelve_root_2, pitch);
+
+            data_index += inc;
+
+            while (data_index > sample_data->data_size)
+            {
+                data_index -= sample_data->data_size;
+            }
+        }
+
+        float eval_lagrange()
+        {
+            float sample;
+
+            float sampleA, sampleB, sampleC, sampleD;
+            float c0, c1, c2, c3;
+            float margin = data_index - 2;
+            float subPos = data_index - static_cast<int>(data_index);
+
+            sampleA = sample_data->get_safe(margin - 1);
+            sampleB = sample_data->get_safe(margin);
+            sampleC = sample_data->get_safe(margin + 1);
+            sampleD = sample_data->get_safe(margin + 2);
+
+            c0 = sampleB;
+            c1 = sampleC - 1 / 3.0f * sampleA - 1 / 2.0f * sampleB - 1 / 6.0f * sampleD;
+            c2 = 1 / 2.0f * (sampleA + sampleC) - sampleB;
+            c3 = 1 / 6.0f * (sampleD - sampleA) + 1 / 2.0f * (sampleB - sampleC);
+
+            sample = ((c3 * subPos + c2) * subPos + c1) * subPos + c0;
+
+            return sample;
+        }
+    };
+
+    // -- Edit sample --
+    constexpr int INIT_SAMPLE_COUNT = 128;
+    Synth synth;
+    SampleData sample_data;
+    
     int edit_margin = 30;
     int edit_bottom_margin = 50;
     int edit_inner_margin = 15;
@@ -182,9 +273,10 @@ static void init_audio(SceneAudio *scene)
         static_cast<float>(edit_outline.w),
         static_cast<float>(edit_outline.h)};
 
-    custom_sample = new float[sample_count];
-    memset(custom_sample, 0, sample_count * sizeof(float));
-
+    // Setup synth and sampledata
+    sample_data.resize(INIT_SAMPLE_COUNT);
+    synth.sample_data = &sample_data;
+    
     // The shapes
     regenerate_rects(scene);
 }
@@ -197,12 +289,6 @@ static void free_audio()
     }
 
     delete[] audio_buffer;
-
-    if (custom_sample)
-    {
-        delete[] custom_sample;
-        custom_sample = nullptr;
-    }
 }
 
 static void audio_callback(void *userdata, SDL_AudioStream *stream, int additionalAmount, int totalAmount)
@@ -324,6 +410,9 @@ static void edit_sample_update(SceneAudio *scene)
     auto mouse_pos = scene->input->get_mouse_pos();
     Linef mouse_line = Linef(mouse_pos_prev, mouse_pos);
 
+    int sample_count = sample_data.data_size;
+    float *custom_sample = sample_data.data.get();
+
     int w = Math::floor(edit_space.w / static_cast<float>(sample_count));
     for (int i = 0; i < sample_count; i++)
     {
@@ -352,6 +441,9 @@ static void edit_sample_draw(SceneAudio *scene)
 
     SDL_RenderRect(renderer, &edit_outline_rect);
 
+    int sample_count = sample_data.data_size;
+    float *custom_sample = sample_data.data.get();
+    
     // Draw samples
     SDL_SetRenderDrawColor(renderer, 0, 255, 100, SDL_ALPHA_OPAQUE);
     for (int i = 0; i < sample_count; i++)
