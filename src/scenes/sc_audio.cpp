@@ -15,7 +15,7 @@ namespace
         EditSample,
         TheShapes
     };
-    State state = State::Main;
+    State state = State::EditSample;
 
     // Audio
     constexpr int DEFAULT_SAMPLE_RATE = 44100;
@@ -57,8 +57,17 @@ namespace
     };
 
     // -- Edit sample --
+    int sample_count = 128;
+    float *custom_sample = nullptr;
 
+    int edit_margin = 30;
+    int edit_bottom_margin = 50;
+    int edit_inner_margin = 15;
 
+    Recti edit_outline;
+    Recti edit_space;
+    SDL_FRect edit_outline_rect;
+        
     // -- The shapes --
     constexpr int RECT_COUNT = 20;
     Recti test_rects[RECT_COUNT];
@@ -149,6 +158,29 @@ static void init_audio(SceneAudio *scene)
         SDL_ResumeAudioStreamDevice(audio_stream);
     }
 
+    // Sample edit
+    edit_outline = Recti{
+        edit_margin,
+        edit_margin,
+        scene->game->get_backbuffer_width() - edit_margin * 2,
+        scene->game->get_backbuffer_height() - edit_margin * 2 - edit_bottom_margin};
+
+    edit_space = Recti(
+        edit_outline.x + edit_inner_margin,
+        edit_outline.y + edit_inner_margin,
+        edit_outline.w - edit_inner_margin * 2,
+        edit_outline.h - edit_inner_margin * 2);
+
+    edit_outline_rect = {
+        static_cast<float>(edit_outline.x),
+        static_cast<float>(edit_outline.y),
+        static_cast<float>(edit_outline.w),
+        static_cast<float>(edit_outline.h)};
+    
+    custom_sample = new float[sample_count];
+    memset(custom_sample, 0, sample_count * sizeof(float));
+    
+    // The shapes
     regenerate_rects(scene);
 }
 
@@ -160,6 +192,12 @@ static void free_audio()
     }
 
     delete[] audio_buffer;
+
+    if (custom_sample)
+    {
+        delete[] custom_sample;
+        custom_sample = nullptr;
+    }
 }
 
 static void audio_callback(void *userdata, SDL_AudioStream *stream, int additionalAmount, int totalAmount)
@@ -194,7 +232,7 @@ static void main_update(SceneAudio *scene)
 {
     if (scene->input->key_pressed(SDLK_SPACE))
     {
-        state = State::TheShapes;
+        state = State::EditSample;
         if (audio_playing)
         {
             audio_playing = false;
@@ -261,6 +299,25 @@ static void edit_sample_update(SceneAudio *scene)
     {
         state = State::Main;
     }
+
+    auto mouse_pos = scene->input->get_mouse_pos();
+    
+    int w = Math::floor(edit_space.w / static_cast<float>(sample_count));
+    for (int i = 0; i < sample_count; i++)
+    {
+        Recti r = Recti(
+            edit_space.x + edit_space.w * (i / static_cast<float>(sample_count)),
+            edit_space.y,
+            w,
+            edit_space.h);
+        
+        if (r.contains(mouse_pos))
+        {
+            // custom_sample[i] = (mouse_pos.y - edit_space.y) / static_cast<float>(edit_space.h);
+            custom_sample[i] = (mouse_pos.y - edit_space.y - edit_space.h/2.0f) / (edit_space.h / 2.0f);
+            printf("%f\n", custom_sample[i]);
+        }
+    }
 }
 
 static void edit_sample_draw(SceneAudio *scene)
@@ -269,6 +326,24 @@ static void edit_sample_draw(SceneAudio *scene)
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderDebugText(renderer, 10, 10, "-- EDIT SAMPLE --");
+
+    SDL_RenderRect(renderer, &edit_outline_rect);
+
+    // Draw samples
+    SDL_SetRenderDrawColor(renderer, 0, 255, 100, SDL_ALPHA_OPAQUE);
+    for (int i = 0; i < sample_count; i++)
+    {
+        float bip_width = 2.0f;
+        SDL_FRect r = {
+            edit_space.x + (edit_space.w - bip_width) * (i / static_cast<float>(sample_count)),
+            edit_space.y + ((edit_space.h - bip_width) / 2.0f) + (((edit_space.h - bip_width) / 2.0f) * custom_sample[i]),
+            bip_width,
+            bip_width
+        };
+        
+        SDL_RenderRect(renderer, &r);
+    }
+
 }
 
 static void the_shapes_update(SceneAudio *scene)
@@ -284,7 +359,7 @@ static void the_shapes_update(SceneAudio *scene)
         Recti &r = test_rects[i];
         Vec2i move = Vec2i(Math::randRangei(-mag, mag),
                            Math::randRangei(-mag, mag));
-        
+
         // Don't overlap other rectangles
         auto tmp = r;
 
