@@ -12,15 +12,10 @@ class Input;
 
 class Scene
 {
-    friend Game;
-
-private:
-
-protected:
+public:
     Game *game = nullptr;
     Input *input = nullptr;
-    
-public:
+
     RendererType renderer_type = RendererType::Sdl;
 
     Scene(const Scene&) = delete;

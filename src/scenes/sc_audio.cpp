@@ -9,6 +9,14 @@
 
 namespace
 {
+    enum State
+    {
+        Main,
+        EditSample,
+        TheShapes
+    };
+    State state = State::Main;
+
     // Audio
     constexpr int DEFAULT_SAMPLE_RATE = 44100;
     constexpr int AUDIO_BUFFER_SIZE_SAMPLES = 512;
@@ -17,7 +25,7 @@ namespace
 
     SDL_AudioStream *audio_stream = nullptr;
     float siner = 0.0f;
-    
+
     std::atomic<float> pitch = 1.0f;
 
     float *audio_buffer = nullptr;
@@ -47,60 +55,46 @@ namespace
         SDLK_SEMICOLON,
         SDLK_SLASH,
     };
+
+    // -- Edit sample --
+    constexpr int RECT_COUNT = 20;
+    Recti test_rects[RECT_COUNT];
 }
 
 // Audio test
-static void init_audio();
+static void init_audio(SceneAudio *scene);
 static void free_audio();
 static void audio_callback(void *userdata, SDL_AudioStream *stream, int additionalAmount, int totalAmount);
 
+static void regenerate_rects(SceneAudio *scene);
+
+static void main_update(SceneAudio *scene);
+static void main_draw(SceneAudio *scene);
+
+static void edit_sample_update(SceneAudio *scene);
+static void edit_sample_draw(SceneAudio *scene);
+
+static void the_shapes_update(SceneAudio *scene);
+static void the_shapes_draw(SceneAudio *scene);
+
 void SceneAudio::ready()
 {
-    init_audio();
+    init_audio(this);
 }
 
 void SceneAudio::update()
 {
-    // if (game->input.key_pressed(SDLK_SPACE))
-    // {
-    //     if (audio_playing)
-    //     {
-    //         SDL_PauseAudioStreamDevice(audio_stream);
-    //     }
-    //     else
-    //     {
-    //         SDL_ResumeAudioStreamDevice(audio_stream);
-    //     }
-    //     audio_playing = !audio_playing;
-    // }
-    
-    // if (game->input.key_pressed(SDLK_UP))
-    // {
-    //     pitch.store(pitch.load() + 1.0f);
-    // }
-
-    // if (game->input.key_pressed(SDLK_DOWN))
-    // {
-    //     pitch.store(pitch.load() - 1.0f);
-    // }
-
-    audio_playing = false;
-    for (int i = 0; i < key_count; i++)
+    switch (state)
     {
-        if (game->input.key(keys[i]))
-        {
-            pitch.store(i);
-            audio_playing = true;
-        }
-    }
-
-    if (!audio_playing)
-    {
-        SDL_PauseAudioStreamDevice(audio_stream);
-    }
-    else
-    {
-        SDL_ResumeAudioStreamDevice(audio_stream);
+    case State::Main:
+        main_update(this);
+        break;
+    case State::EditSample:
+        edit_sample_update(this);
+        break;
+    case State::TheShapes:
+        the_shapes_update(this);
+        break;
     }
 }
 
@@ -112,30 +106,18 @@ void SceneAudio::draw()
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderDebugText(renderer, 272, 100, "Hello SDL3!");
-    SDL_RenderDebugText(renderer, 224, 150, "Debug text and audio stream stuff");
-
-    SDL_RenderDebugText(renderer, 124, 200, "Use the bottom row of keys on the keyboard like a piano!");
-    SDL_RenderDebugTextFormat(renderer, 224, 225, "Pitch: %" SDL_PRIs32, (int)pitch);
-
-    auto mouse_pos = input->get_mouse_pos();
-    if (input->mouse(MouseButton::Left))
+    switch (state)
     {
-        SDL_RenderDebugText(renderer, mouse_pos.x, mouse_pos.y, "Morshu");
+    case State::Main:
+        main_draw(this);
+        break;
+    case State::EditSample:
+        edit_sample_draw(this);
+        break;
+    case State::TheShapes:
+        the_shapes_draw(this);
+        break;
     }
-    else
-    {
-        SDL_RenderDebugText(renderer, mouse_pos.x, mouse_pos.y, "Non-Morshu");
-    }
-    
-    if (audio_playing)
-    {
-        SDL_RenderDebugText(renderer, 224, 250, "Playing!");
-    }
-
-    // For printf style substitutions
-    SDL_RenderDebugTextFormat(renderer, ((float) (game->get_backbuffer_width() - (charsize * 46)) / 2), 400, "(This program has been running for %" SDL_PRIu64 " seconds.)", SDL_GetTicks() / 1000);
 }
 
 void SceneAudio::destroy()
@@ -143,15 +125,14 @@ void SceneAudio::destroy()
     free_audio();
 }
 
-static void init_audio()
+static void init_audio(SceneAudio *scene)
 {
     audio_buffer = new float[AUDIO_BUFFER_SIZE_SAMPLES * AUDIO_CHANNELS];
-    
+
     SDL_AudioSpec spec;
     spec.freq = DEFAULT_SAMPLE_RATE;
     spec.format = SDL_AUDIO_F32LE;
     spec.channels = AUDIO_CHANNELS;
-    printf("Working\n");
 
     audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, audio_callback, nullptr);
     if (audio_stream == NULL)
@@ -164,6 +145,8 @@ static void init_audio()
     {
         SDL_ResumeAudioStreamDevice(audio_stream);
     }
+
+    regenerate_rects(scene);
 }
 
 static void free_audio()
@@ -202,4 +185,212 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
     SDL_PutAudioStreamData(stream, buf, totalAmount);
 
     delete[] buf;
+}
+
+static void main_update(SceneAudio *scene)
+{
+    if (scene->input->key_pressed(SDLK_SPACE))
+    {
+        state = State::TheShapes;
+        if (audio_playing)
+        {
+            audio_playing = false;
+            SDL_PauseAudioStreamDevice(audio_stream);
+        }
+        return;
+    }
+
+    audio_playing = false;
+    for (int i = 0; i < key_count; i++)
+    {
+        if (scene->game->input.key(keys[i]))
+        {
+            pitch.store(i);
+            audio_playing = true;
+        }
+    }
+
+    if (!audio_playing)
+    {
+        SDL_PauseAudioStreamDevice(audio_stream);
+    }
+    else
+    {
+        SDL_ResumeAudioStreamDevice(audio_stream);
+    }
+}
+
+static void main_draw(SceneAudio *scene)
+{
+    const int charsize = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE;
+
+    SDL_Renderer *renderer = scene->game->get_renderer();
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderDebugText(renderer, 272, 100, "Hello SDL3!");
+    SDL_RenderDebugText(renderer, 224, 150, "Debug text and audio stream stuff");
+
+    SDL_RenderDebugText(renderer, 124, 200, "Use the bottom row of keys on the keyboard like a piano!");
+    SDL_RenderDebugTextFormat(renderer, 224, 225, "Pitch: %" SDL_PRIs32, (int)pitch);
+
+    auto mouse_pos = scene->input->get_mouse_pos();
+    if (scene->input->mouse(MouseButton::Left))
+    {
+        SDL_RenderDebugText(renderer, mouse_pos.x, mouse_pos.y, "Morshu");
+    }
+    else
+    {
+        SDL_RenderDebugText(renderer, mouse_pos.x, mouse_pos.y, "Non-Morshu");
+    }
+
+    if (audio_playing)
+    {
+        SDL_RenderDebugText(renderer, 224, 250, "Playing!");
+    }
+
+    // For printf style substitutions
+    SDL_RenderDebugTextFormat(renderer, ((float)(scene->game->get_backbuffer_width() - (charsize * 46)) / 2), 400, "(This program has been running for %" SDL_PRIu64 " seconds.)", SDL_GetTicks() / 1000);
+}
+
+static void edit_sample_update(SceneAudio *scene)
+{
+    if (scene->input->key_pressed(SDLK_SPACE))
+    {
+        state = State::Main;
+    }
+}
+
+static void edit_sample_draw(SceneAudio *scene)
+{
+    SDL_Renderer *renderer = scene->game->get_renderer();
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderDebugText(renderer, 10, 10, "-- EDIT SAMPLE --");
+}
+
+static void the_shapes_update(SceneAudio *scene)
+{
+    if (scene->input->key_pressed(SDLK_R))
+    {
+        regenerate_rects(scene);
+    }
+
+    int mag = 2;
+    for (int i = 0; i < RECT_COUNT; i++)
+    {
+        Recti &r = test_rects[i];
+        Vec2i move = Vec2i(Math::randRangei(-mag, mag),
+                           Math::randRangei(-mag, mag));
+        
+        // Don't overlap other rectangles
+        auto tmp = r;
+
+        // Horizontal
+        tmp.x += move.x;
+        for (int j = 0; j < RECT_COUNT; j++)
+        {
+            Recti &check = test_rects[j];
+            if (&r == &check)
+            {
+                continue;
+            }
+
+            if (check.overlaps(tmp))
+            {
+                tmp.x = r.x;
+                break;
+            }
+        }
+
+        // Vertical
+        tmp.y += move.y;
+        for (int j = 0; j < RECT_COUNT; j++)
+        {
+            Recti &check = test_rects[j];
+            if (&r == &check)
+            {
+                continue;
+            }
+
+            if (check.overlaps(tmp))
+            {
+                tmp.y = r.y;
+                break;
+            }
+        }
+
+        r.x = tmp.x;
+        r.y = tmp.y;
+
+        // Don't exit the room
+        r.x = Math::clampi(r.x, 0, scene->game->get_backbuffer_width() - r.w - 1);
+        r.y = Math::clampi(r.y, 0, scene->game->get_backbuffer_height() - r.h - 1);
+    }
+}
+
+static void the_shapes_draw(SceneAudio *scene)
+{
+    SDL_Renderer *renderer = scene->game->get_renderer();
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderDebugText(renderer, 10, 10, "-- THE SHAPES --");
+
+    auto mouse_pos = scene->input->get_mouse_pos();
+
+    for (int i = 0; i < RECT_COUNT; i++)
+    {
+        // Draw rect in red if mouse is inside it
+        if (test_rects[i].contains(mouse_pos))
+        {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+        }
+        else
+        {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+        }
+
+        SDL_FRect r = {
+            static_cast<float>(test_rects[i].x),
+            static_cast<float>(test_rects[i].y),
+            static_cast<float>(test_rects[i].w),
+            static_cast<float>(test_rects[i].h)};
+
+        SDL_RenderRect(renderer, &r);
+    }
+}
+
+static void regenerate_rects(SceneAudio *scene)
+{
+    // Generate a bunch of random, non-overlapping rectangles
+    for (int i = 0; i < RECT_COUNT; i++)
+    {
+        for (;;)
+        {
+            bool no_good = false;
+            Vec2i s = Vec2i(
+                Math::randRangei(16, 128),
+                Math::randRangei(16, 128));
+
+            Recti r = Recti(
+                Vec2i(
+                    Math::randRangei(0, scene->game->get_backbuffer_width() - s.x - 1),
+                    Math::randRangei(0, scene->game->get_backbuffer_height() - s.y - 1)),
+                s);
+
+            for (int j = 0; j < i; j++)
+            {
+                if (test_rects[j].overlaps(r))
+                {
+                    no_good = true;
+                    break;
+                }
+            }
+
+            if (!no_good)
+            {
+                test_rects[i] = r;
+                break;
+            }
+        }
+    }
 }
