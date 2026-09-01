@@ -67,6 +67,8 @@ namespace
     Recti edit_outline;
     Recti edit_space;
     SDL_FRect edit_outline_rect;
+
+    Vec2i mouse_pos_prev = Vec2i(0, 0);
         
     // -- The shapes --
     constexpr int RECT_COUNT = 20;
@@ -301,6 +303,13 @@ static void edit_sample_update(SceneAudio *scene)
     }
 
     auto mouse_pos = scene->input->get_mouse_pos();
+
+    // Failsafe to prevent weird mouse behavior for one frame(?)
+    if (mouse_pos_prev == Vec2i(0, 0))
+    {
+        mouse_pos_prev = mouse_pos;
+    }
+    Linef mouse_line = Linef(mouse_pos_prev, mouse_pos);
     
     int w = Math::floor(edit_space.w / static_cast<float>(sample_count));
     for (int i = 0; i < sample_count; i++)
@@ -311,13 +320,15 @@ static void edit_sample_update(SceneAudio *scene)
             w,
             edit_space.h);
         
-        if (r.contains(mouse_pos))
+        if (mouse_line.intersects(r))
         {
             // custom_sample[i] = (mouse_pos.y - edit_space.y) / static_cast<float>(edit_space.h);
             custom_sample[i] = (mouse_pos.y - edit_space.y - edit_space.h/2.0f) / (edit_space.h / 2.0f);
             printf("%f\n", custom_sample[i]);
         }
     }
+
+    mouse_pos_prev = mouse_pos;
 }
 
 static void edit_sample_draw(SceneAudio *scene)
