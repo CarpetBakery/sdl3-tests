@@ -69,7 +69,7 @@ namespace
     SDL_FRect edit_outline_rect;
 
     Vec2i mouse_pos_prev = Vec2i(0, 0);
-        
+
     // -- The shapes --
     constexpr int RECT_COUNT = 20;
     Recti test_rects[RECT_COUNT];
@@ -81,6 +81,9 @@ static void free_audio();
 static void audio_callback(void *userdata, SDL_AudioStream *stream, int additionalAmount, int totalAmount);
 
 static void regenerate_rects(SceneAudio *scene);
+
+// -- States --
+static void switch_state(SceneAudio *scene, State new_state);
 
 static void main_update(SceneAudio *scene);
 static void main_draw(SceneAudio *scene);
@@ -178,10 +181,10 @@ static void init_audio(SceneAudio *scene)
         static_cast<float>(edit_outline.y),
         static_cast<float>(edit_outline.w),
         static_cast<float>(edit_outline.h)};
-    
+
     custom_sample = new float[sample_count];
     memset(custom_sample, 0, sample_count * sizeof(float));
-    
+
     // The shapes
     regenerate_rects(scene);
 }
@@ -230,11 +233,27 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
     delete[] buf;
 }
 
+static void switch_state(SceneAudio *scene, State new_state)
+{
+    switch (new_state)
+    {
+    case State::Main:
+        break;
+    case State::EditSample:
+        mouse_pos_prev = scene->input->get_mouse_pos();
+        break;
+    case State::TheShapes:
+        break;
+    }
+
+    state = new_state;
+}
+
 static void main_update(SceneAudio *scene)
 {
     if (scene->input->key_pressed(SDLK_SPACE))
     {
-        state = State::EditSample;
+        switch_state(scene, State::EditSample);
         if (audio_playing)
         {
             audio_playing = false;
@@ -299,18 +318,12 @@ static void edit_sample_update(SceneAudio *scene)
 {
     if (scene->input->key_pressed(SDLK_SPACE))
     {
-        state = State::Main;
+        switch_state(scene, State::Main);
     }
 
     auto mouse_pos = scene->input->get_mouse_pos();
-
-    // Failsafe to prevent weird mouse behavior for one frame(?)
-    if (mouse_pos_prev == Vec2i(0, 0))
-    {
-        mouse_pos_prev = mouse_pos;
-    }
     Linef mouse_line = Linef(mouse_pos_prev, mouse_pos);
-    
+
     int w = Math::floor(edit_space.w / static_cast<float>(sample_count));
     for (int i = 0; i < sample_count; i++)
     {
@@ -319,11 +332,10 @@ static void edit_sample_update(SceneAudio *scene)
             edit_space.y,
             w,
             edit_space.h);
-        
+
         if (mouse_line.intersects(r))
         {
-            // custom_sample[i] = (mouse_pos.y - edit_space.y) / static_cast<float>(edit_space.h);
-            custom_sample[i] = (mouse_pos.y - edit_space.y - edit_space.h/2.0f) / (edit_space.h / 2.0f);
+            custom_sample[i] = (mouse_pos.y - edit_space.y - edit_space.h / 2.0f) / (edit_space.h / 2.0f);
             printf("%f\n", custom_sample[i]);
         }
     }
@@ -349,12 +361,10 @@ static void edit_sample_draw(SceneAudio *scene)
             edit_space.x + (edit_space.w - bip_width) * (i / static_cast<float>(sample_count)),
             edit_space.y + ((edit_space.h - bip_width) / 2.0f) + (((edit_space.h - bip_width) / 2.0f) * custom_sample[i]),
             bip_width,
-            bip_width
-        };
-        
+            bip_width};
+
         SDL_RenderRect(renderer, &r);
     }
-
 }
 
 static void the_shapes_update(SceneAudio *scene)
