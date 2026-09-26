@@ -202,7 +202,7 @@ bool Game::init_datapath()
     {
         up_path = up_path.parent_path();
         data_path = up_path.string() + "\\data";
-    } while (!fs::exists(data_path) && !fs::is_directory(data_path));
+    } while (!fs::exists(data_path) && !fs::is_directory(data_path) && up_path.string().size() > 3);
     LB_ASSERT((fs::exists(data_path) && fs::is_directory(data_path)) && data_path.size() > 0, "Error: Unable to find data directory.");
 
     return true;
