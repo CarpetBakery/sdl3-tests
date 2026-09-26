@@ -157,6 +157,24 @@ void SceneGpuBatcher::ready()
 
 void SceneGpuBatcher::destroy()
 {
+    if (texture)
+    {
+        SDL_ReleaseGPUTexture(game->get_device(), texture);
+        texture = nullptr;
+    }
+
+    if (sampler)
+    {
+        SDL_ReleaseGPUSampler(game->get_device(), sampler);
+        sampler = nullptr;
+    }
+
+    if (sprite_data_buffer)
+    {
+        SDL_ReleaseGPUBuffer(game->get_device(), sprite_data_buffer);
+        sprite_data_buffer = nullptr;
+    }
+    
     if (sprite_pipeline)
     {
         SDL_ReleaseGPUGraphicsPipeline(game->get_device(), sprite_pipeline);
@@ -194,6 +212,7 @@ void SceneGpuBatcher::draw()
             sprite_data_transfer_buffer,
             true);
 
+        // Generate randomized sprite data 
         for (int i = 0; i < sprite_count; i++)
         {
             int ravioli = rand() % 4;
