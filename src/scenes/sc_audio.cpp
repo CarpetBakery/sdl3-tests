@@ -193,6 +193,7 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
 
 static void regenerate_rects(SceneAudio *scene);
 static void musical_typing(SceneAudio *scene);
+static void draw_piano(SceneAudio *scene, SDL_Renderer *renderer);
 
 // -- States --
 static void switch_state(SceneAudio *scene, State new_state);
@@ -508,6 +509,16 @@ static void edit_sample_draw(SceneAudio *scene)
         }
         prev_point = Vec2i(r.x, r.y);
     }
+
+    draw_piano(scene, renderer);
+
+    if (audio_playing)
+    {
+        std::string play = "Playing " + std::to_string(static_cast<int>(pitch.load()));
+        
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+        SDL_RenderDebugText(renderer, edit_space.x, edit_space.y + edit_space.h + edit_margin, play.c_str());
+    }
 }
 
 static void the_shapes_update(SceneAudio *scene)
@@ -657,4 +668,9 @@ static void regenerate_rects(SceneAudio *scene)
             }
         }
     }
+}
+
+static void draw_piano(SceneAudio *scene, SDL_Renderer *renderer)
+{
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE); 
 }
